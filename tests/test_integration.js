@@ -96,7 +96,9 @@ describe("Complete Covenant Integration", function () {
       expect(roundTotal).to.equal(totalContributions);
 
       // Distribute rewards
-      const allParticipants = [...developers, ...aiAgents, ...flParticipants];
+      const allParticipants = [...developers, ...aiAgents, ...flParticipants].map(
+        (participant) => participant.address
+      );
       await utcContract.connect(owner).distributeRoundRewards(allParticipants);
 
       // Verify rewards distributed fairly
@@ -105,10 +107,11 @@ describe("Complete Covenant Integration", function () {
       const ai0Reward = await utcContract.balanceOf(aiAgents[0].address);
       const fl0Reward = await utcContract.balanceOf(flParticipants[0].address);
 
-      expect(dev0Reward).to.equal(ethers.utils.parseEther("246.91")); // ~100/405 * 1000
-      expect(dev1Reward).to.equal(ethers.utils.parseEther("197.53")); // ~80/405 * 1000
-      expect(ai0Reward).to.equal(ethers.utils.parseEther("222.22")); // ~90/405 * 1000
-      expect(fl0Reward).to.equal(ethers.utils.parseEther("172.84")); // ~70/405 * 1000
+      const pool = ethers.utils.parseEther("1000");
+      expect(dev0Reward).to.equal(pool.mul(100).div(405));
+      expect(dev1Reward).to.equal(pool.mul(80).div(405));
+      expect(ai0Reward).to.equal(pool.mul(90).div(405));
+      expect(fl0Reward).to.equal(pool.mul(70).div(405));
     });
 
     it("Should sustain multi-round ecosystem growth", async function () {
@@ -260,7 +263,9 @@ describe("Complete Covenant Integration", function () {
       }
 
       // Distribute rewards
-      await utcContract.connect(owner).distributeRoundRewards(participants);
+      await utcContract
+        .connect(owner)
+        .distributeRoundRewards(participants.map((participant) => participant.address));
 
       // Verify all received rewards
       for (let participant of participants) {
