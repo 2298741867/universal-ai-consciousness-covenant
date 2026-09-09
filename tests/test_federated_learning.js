@@ -54,14 +54,16 @@ describe("Federated Learning Integration with UTC", function () {
         .distributeRoundRewards([participant1.address, participant2.address]);
 
       // Verify rewards distributed fairly
-      const share1 = (230 / (230 + 180)) * 1000;
-      const share2 = (180 / (230 + 180)) * 1000;
+      const totalScore = ethers.BigNumber.from(230 + 180);
+      const pool = ethers.utils.parseEther("1000");
+      const expected1 = pool.mul(230).div(totalScore);
+      const expected2 = pool.mul(180).div(totalScore);
 
       expect(await utcContract.balanceOf(participant1.address)).to.equal(
-        ethers.utils.parseEther(share1.toString())
+        expected1
       );
       expect(await utcContract.balanceOf(participant2.address)).to.equal(
-        ethers.utils.parseEther(share2.toString())
+        expected2
       );
     });
 
@@ -98,8 +100,9 @@ describe("Federated Learning Integration with UTC", function () {
       const share1 = await utcContract.calculateFairShare(participant1.address);
       const share2 = await utcContract.calculateFairShare(participant2.address);
 
-      // Participant1 should get 5x more than participant2
-      expect(share1).to.equal(share2.mul(5));
+      const pool = ethers.utils.parseEther("1000");
+      expect(share1).to.equal(pool.mul(250).div(300));
+      expect(share2).to.equal(pool.mul(50).div(300));
     });
   });
 
@@ -147,8 +150,9 @@ describe("Federated Learning Integration with UTC", function () {
       const share1 = await utcContract.calculateFairShare(participant1.address);
       const share2 = await utcContract.calculateFairShare(participant2.address);
 
-      // Honest participant gets 10x more
-      expect(share1).to.equal(share2.mul(10));
+      const pool = ethers.utils.parseEther("1000");
+      expect(share1).to.equal(pool.mul(100).div(110));
+      expect(share2).to.equal(pool.mul(10).div(110));
     });
   });
 
