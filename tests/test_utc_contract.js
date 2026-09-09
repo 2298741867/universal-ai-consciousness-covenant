@@ -11,11 +11,10 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
   let addr1;
   let addr2;
   let addr3;
-  const INITIAL_POOL = ethers.utils.parseEther("1000");
 
   beforeEach(async function () {
     [owner, addr1, addr2, addr3] = await ethers.getSigners();
-    
+
     const UTC = await ethers.getContractFactory("UnifiedTokenCovenant");
     utcContract = await UTC.deploy();
     await utcContract.deployed();
@@ -34,6 +33,10 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
     it("Should initialize round to 0", async function () {
       expect(await utcContract.currentRound()).to.equal(0);
     });
+
+    it("Should initialize round pool to 1000 UTC", async function () {
+      expect(await utcContract.roundPool()).to.equal(ethers.utils.parseEther("1000"));
+    });
   });
 
   describe("Contribution Recording", function () {
@@ -41,11 +44,12 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
       await utcContract.recordContribution(
         addr1.address,
         100,
-        0, // FederatedLearning
+        0,
         "Model improvement round 1"
       );
 
       expect(await utcContract.getTotalContributions(addr1.address)).to.equal(100);
+      expect(await utcContract.getRoundContributionScore(0, addr1.address)).to.equal(100);
     });
 
     it("Should reject contribution from unauthorized address", async function () {
@@ -67,6 +71,8 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
       expect(history.length).to.equal(2);
       expect(history[0].score).to.equal(50);
       expect(history[1].score).to.equal(75);
+      expect(history[0].roundNumber).to.equal(0);
+      expect(history[1].roundNumber).to.equal(0);
     });
 
     it("Should accumulate total contribution score", async function () {
@@ -78,43 +84,39 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
   });
 
   describe("Fair Share Calculation", function () {
-    it("Should calculate fair share based on contribution percentage", async function () {
-      // Round totals: 100 points
+    it("Should calculate fair share based on current round contribution percentage", async function () {
       await utcContract.recordContribution(addr1.address, 40, 0, "Contribution 1");
       await utcContract.recordContribution(addr2.address, 35, 0, "Contribution 2");
       await utcContract.recordContribution(addr3.address, 25, 0, "Contribution 3");
 
-      // Pool is 1000 UTC
       const fairShare1 = await utcContract.calculateFairShare(addr1.address);
       const fairShare2 = await utcContract.calculateFairShare(addr2.address);
       const fairShare3 = await utcContract.calculateFairShare(addr3.address);
 
-      expect(fairShare1).to.equal(ethers.utils.parseEther("400")); // 40%
-      expect(fairShare2).to.equal(ethers.utils.parseEther("350")); // 35%
-      expect(fairShare3).to.equal(ethers.utils.parseEther("250")); // 25%
+      expect(fairShare1).to.equal(ethers.utils.parseEther("400"));
+      expect(fairShare2).to.equal(ethers.utils.parseEther("350"));
+      expect(fairShare3).to.equal(ethers.utils.parseEther("250"));
     });
 
-    it("Should return 0 if no contributions", async function () {
-      const fairShare = await utcContract.calculateFairShare(addr1.address);
+    it("Should return 0 if participant has no current-round contributions", async function () {
+      await utcContract.recordContribution(addr1.address, 100, 0, "Contribution");
+      const fairShare = await utcContract.calculateFairShare(addr2.address);
       expect(fairShare).to.equal(0);
     });
   });
 
   describe("Reward Distribution", function () {
     it("Should distribute rewards to all participants", async function () {
-      // Record contributions
       await utcContract.recordContribution(addr1.address, 40, 0, "Contribution 1");
       await utcContract.recordContribution(addr2.address, 35, 0, "Contribution 2");
       await utcContract.recordContribution(addr3.address, 25, 0, "Contribution 3");
 
-      // Distribute rewards
       await utcContract.distributeRoundRewards([
         addr1.address,
         addr2.address,
         addr3.address,
       ]);
 
-      // Check balances
       expect(await utcContract.balanceOf(addr1.address)).to.equal(
         ethers.utils.parseEther("400")
       );
@@ -124,11 +126,6 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
       expect(await utcContract.balanceOf(addr3.address)).to.equal(
         ethers.utils.parseEther("250")
       );
-    });
-
-    it("Should increment round number after distribution", async function () {
-      await utcContract.recordContribution(addr1.address, 100, 0, "Contribution");
-      await utcContract.distributeRoundRewards([addr1.address]);
 
       expect(await utcContract.currentRound()).to.equal(1);
     });
@@ -137,9 +134,21 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
       await utcContract.recordContribution(addr1.address, 100, 0, "Contribution");
       await utcContract.distributeRoundRewards([addr1.address]);
 
-      // After round 1, pool should be 1200 (1000 * 1.2)
-      const newPool = await utcContract.roundPool();
-      expect(newPool).to.equal(ethers.utils.parseEther("1200"));
+      expect(await utcContract.roundPool()).to.equal(ethers.utils.parseEther("1200"));
+    });
+
+    it("Should not distribute duplicate rewards for duplicate participant addresses in the same call", async function () {
+      await utcContract.recordContribution(addr1.address, 100, 0, "Contribution");
+
+      await utcContract.distributeRoundRewards([
+        addr1.address,
+        addr1.address,
+      ]);
+
+      expect(await utcContract.balanceOf(addr1.address)).to.equal(
+        ethers.utils.parseEther("1000")
+      );
+      expect(await utcContract.getParticipantRewards(addr1.address)).to.have.lengthOf(1);
     });
   });
 
@@ -246,24 +255,20 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
 
   describe("Integration Tests", function () {
     it("Should complete full round cycle", async function () {
-      // Round 0: Three contributors
       await utcContract.recordContribution(addr1.address, 40, 0, "Contribution 1");
       await utcContract.recordContribution(addr2.address, 35, 0, "Contribution 2");
       await utcContract.recordContribution(addr3.address, 25, 0, "Contribution 3");
 
-      // Verify contributions recorded
       expect(await utcContract.getTotalContributions(addr1.address)).to.equal(40);
       expect(await utcContract.getTotalContributions(addr2.address)).to.equal(35);
       expect(await utcContract.getTotalContributions(addr3.address)).to.equal(25);
 
-      // Distribute rewards
       await utcContract.distributeRoundRewards([
         addr1.address,
         addr2.address,
         addr3.address,
       ]);
 
-      // Verify rewards
       expect(await utcContract.balanceOf(addr1.address)).to.equal(
         ethers.utils.parseEther("400")
       );
@@ -274,23 +279,19 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
         ethers.utils.parseEther("250")
       );
 
-      // Round 1: New contributions (pool grows to 1200)
       await utcContract.recordContribution(addr1.address, 50, 1, "Knowledge contribution");
       await utcContract.recordContribution(addr2.address, 50, 1, "Code contribution");
 
-      // Verify new round
       expect(await utcContract.currentRound()).to.equal(1);
       expect(await utcContract.roundPool()).to.equal(ethers.utils.parseEther("1200"));
 
-      // Distribute round 1 rewards
       await utcContract.distributeRoundRewards([addr1.address, addr2.address]);
 
-      // Verify total balances (original + new)
       const addr1Balance = await utcContract.balanceOf(addr1.address);
       const addr2Balance = await utcContract.balanceOf(addr2.address);
 
-      expect(addr1Balance).to.be.gt(ethers.utils.parseEther("400")); // Got 600 more
-      expect(addr2Balance).to.be.gt(ethers.utils.parseEther("350")); // Got 600 more
+      expect(addr1Balance).to.equal(ethers.utils.parseEther("1000"));
+      expect(addr2Balance).to.equal(ethers.utils.parseEther("950"));
     });
   });
 });
