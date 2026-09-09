@@ -17,7 +17,6 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
     utcContract = await UTC.deploy();
     await utcContract.deployed();
 
-    // Authorize AI entities
     await utcContract.authorizeContributor(ai1.address);
     await utcContract.authorizeContributor(ai2.address);
     await utcContract.authorizeContributor(ai3.address);
@@ -25,7 +24,6 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
 
   describe("Message Format Validation", function () {
     it("Should process AICP message with proper format", async function () {
-      // Simulate AICP message from Pollux
       const aicpMessage = {
         from_ai: ai1.address,
         to_ai: ai2.address,
@@ -34,7 +32,6 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
         timestamp: Math.floor(Date.now() / 1000),
       };
 
-      // AI1 records contribution via AICP
       await utcContract
         .connect(ai1)
         .recordContribution(
@@ -45,19 +42,19 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
         );
 
       expect(await utcContract.getTotalContributions(ai1.address)).to.equal(100);
+      expect(await utcContract.getRoundContributionScore(0, ai1.address)).to.equal(100);
+      expect(await utcContract.currentRound()).to.equal(0);
     });
   });
 
   describe("Intent Recognition", function () {
     it("Should handle request_model_download intent", async function () {
-      // AI2 requests to download model from AI1
-      // AI1 contributes by serving the model
       await utcContract
         .connect(ai1)
         .recordContribution(
           ai1.address,
           50,
-          2, // CodeContribution type (serving code/model)
+          2,
           "AICP intent: request_model_download"
         );
 
@@ -65,13 +62,12 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
     });
 
     it("Should handle submit_gradient_update intent", async function () {
-      // FL participant submits gradient
       await utcContract
         .connect(ai1)
         .recordContribution(
           ai1.address,
           75,
-          0, // FederatedLearning
+          0,
           "AICP intent: submit_gradient_update"
         );
 
@@ -79,13 +75,12 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
     });
 
     it("Should handle broadcast_knowledge_hash intent", async function () {
-      // AI broadcasts knowledge to IPFS
       await utcContract
         .connect(ai1)
         .recordContribution(
           ai1.address,
           60,
-          1, // KnowledgeContribution
+          1,
           "AICP intent: broadcast_knowledge_hash - Qm..."
         );
 
@@ -95,7 +90,6 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
 
   describe("Multi-AI Coordination", function () {
     it("Should coordinate rewards across multiple AIs", async function () {
-      // Three AIs collaborate on a task
       await utcContract
         .connect(ai1)
         .recordContribution(ai1.address, 40, 0, "AICP: Coordination round 1");
@@ -106,10 +100,8 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
         .connect(ai3)
         .recordContribution(ai3.address, 25, 0, "AICP: Coordination round 1");
 
-      // Distribute UTC to all three
       await utcContract.distributeRoundRewards([ai1.address, ai2.address, ai3.address]);
 
-      // Verify fair distribution
       expect(await utcContract.balanceOf(ai1.address)).to.equal(
         ethers.utils.parseEther("400")
       );
@@ -119,12 +111,13 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
       expect(await utcContract.balanceOf(ai3.address)).to.equal(
         ethers.utils.parseEther("250")
       );
+
+      expect(await utcContract.currentRound()).to.equal(1);
     });
   });
 
   describe("Trustless Verification", function () {
     it("Should verify contribution with cryptographic proof", async function () {
-      // AI1 makes a contribution with proof
       const contribution = {
         score: 100,
         timestamp: Math.floor(Date.now() / 1000),
@@ -142,7 +135,6 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
           `Proof: ${contribution.proof_hash}`
         );
 
-      // Verify contribution recorded immutably
       const history = await utcContract.getContributionHistory(ai1.address);
       expect(history[0].description).to.include("Proof:");
       expect(history[0].validated).to.be.true;
@@ -151,22 +143,19 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
 
   describe("Intent Execution", function () {
     it("Should execute claim_rewards intent", async function () {
-      // AI1 contributes
       await utcContract
         .connect(ai1)
         .recordContribution(ai1.address, 100, 0, "Contribution");
 
-      // AI1 claims rewards (distributed automatically)
       await utcContract.connect(owner).distributeRoundRewards([ai1.address]);
 
-      // Intent executed successfully
       expect(await utcContract.balanceOf(ai1.address)).to.equal(
         ethers.utils.parseEther("1000")
       );
+      expect(await utcContract.currentRound()).to.equal(1);
     });
 
     it("Should execute query_blockchain_state intent", async function () {
-      // AI2 queries blockchain state
       const round = await utcContract.currentRound();
       const pool = await utcContract.roundPool();
 
@@ -175,8 +164,6 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
     });
 
     it("Should execute execute_smart_contract intent", async function () {
-      // AI3 executes smart contract function
-      // (authorization and contribution recording)
       await utcContract
         .connect(ai3)
         .recordContribution(ai3.address, 100, 0, "Smart contract execution");
@@ -187,14 +174,12 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
 
   describe("AICP Message Flow", function () {
     it("Should complete full AICP message cycle", async function () {
-      // 1. AI1 creates message
       const message = {
         from_ai: ai1.address,
         intent: "submit_gradient_update",
         score: 100,
       };
 
-      // 2. AI1 signs and sends
       await utcContract
         .connect(ai1)
         .recordContribution(
@@ -204,22 +189,19 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
           `AICP from ${message.from_ai} intent: ${message.intent}`
         );
 
-      // 3. Aggregator verifies and accepts
       const contribution = await utcContract.getTotalContributions(ai1.address);
       expect(contribution).to.equal(100);
 
-      // 4. Aggregator distributes rewards
       await utcContract.connect(owner).distributeRoundRewards([ai1.address]);
 
-      // 5. AI1 receives UTC
       const balance = await utcContract.balanceOf(ai1.address);
       expect(balance).to.equal(ethers.utils.parseEther("1000"));
+      expect(await utcContract.currentRound()).to.equal(1);
     });
   });
 
   describe("Federated AI Learning", function () {
     it("Should enable federated learning between AIs", async function () {
-      // Round 1: Three AIs train collaboratively
       await utcContract
         .connect(ai1)
         .recordContribution(ai1.address, 45, 0, "FL Round 1 - Model A");
@@ -232,7 +214,6 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
 
       await utcContract.distributeRoundRewards([ai1.address, ai2.address, ai3.address]);
 
-      // Round 2: Model improves from federation
       await utcContract
         .connect(ai1)
         .recordContribution(ai1.address, 55, 0, "FL Round 2 - Improved Model A");
@@ -245,7 +226,6 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
 
       await utcContract.distributeRoundRewards([ai1.address, ai2.address, ai3.address]);
 
-      // All AIs improved (models got better through federation)
       const ai1Rewards = await utcContract.getParticipantRewards(ai1.address);
       const ai2Rewards = await utcContract.getParticipantRewards(ai2.address);
       const ai3Rewards = await utcContract.getParticipantRewards(ai3.address);
@@ -253,6 +233,7 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
       expect(ai1Rewards.length).to.equal(2);
       expect(ai2Rewards.length).to.equal(2);
       expect(ai3Rewards.length).to.equal(2);
+      expect(await utcContract.currentRound()).to.equal(2);
     });
   });
 });
