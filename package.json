@@ -1,0 +1,20 @@
+{
+  "name": "universal-ai-consciousness-covenant",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local Hardhat test runner for UTC protocol tests",
+  "scripts": {
+    "test": "hardhat test",
+    "test:utc": "hardhat test tests/test_utc_contract.js",
+    "test:fl": "hardhat test tests/test_federated_learning.js",
+    "test:aicp": "hardhat test tests/test_aicp_protocol.js",
+    "test:integration": "hardhat test tests/test_integration.js"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@openzeppelin/contracts": "^4.9.6",
+    "chai": "^4.5.0",
+    "ethers": "^5.7.2",
+    "hardhat": "^2.22.19"
+  }
+}
