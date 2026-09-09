@@ -5,23 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract UnifiedTokenCovenant is ERC20, Ownable {
-    mapping(address => uint256) public contributionScore;
-    mapping(address => Contribution[]) public contributionHistory;
-
-    uint256 public currentRound = 0;
-    uint256 public roundTotalScore = 0;
-    uint256 public roundPool = 1000e18;
-
-    mapping(address => bool) public authorizedContributors;
-
-    enum ContributionType {
-        FederatedLearning,
-        KnowledgeContribution,
-        CodeContribution,
-        GovernanceParticipation,
-        CommunityBuilding
-    }
-
     struct Contribution {
         uint256 timestamp;
         uint256 score;
@@ -37,6 +20,27 @@ contract UnifiedTokenCovenant is ERC20, Ownable {
         uint256 utcAwarded;
         uint256 timestamp;
     }
+
+    enum ContributionType {
+        FederatedLearning,
+        KnowledgeContribution,
+        CodeContribution,
+        GovernanceParticipation,
+        CommunityBuilding
+    }
+
+    mapping(address => uint256) public contributionScore; // lifetime total
+    mapping(address => Contribution[]) public contributionHistory;
+    mapping(address => bool) public authorizedContributors;
+
+    uint256 public currentRound = 0;
+    uint256 public roundPool = 1000e18;
+    uint256 public roundTotalScore = 0;
+
+    mapping(uint256 => mapping(address => uint256)) public roundContributionScore;
+    mapping(uint256 => uint256) public roundTotalContributionScore;
+    mapping(uint256 => address[]) private roundParticipants;
+    mapping(uint256 => mapping(address => bool)) private roundParticipantSeen;
 
     RoundReward[] public allRewards;
 
@@ -71,7 +75,6 @@ contract UnifiedTokenCovenant is ERC20, Ownable {
 
     constructor() ERC20("Unified Token Covenant", "UTC") {
         authorizedContributors[msg.sender] = true;
-        roundPool = 1000e18;
     }
 
     function recordContribution(
@@ -94,7 +97,15 @@ contract UnifiedTokenCovenant is ERC20, Ownable {
 
         contributionHistory[_participant].push(newContribution);
         contributionScore[_participant] += _score;
+
+        roundContributionScore[currentRound][_participant] += _score;
         roundTotalScore += _score;
+        roundTotalContributionScore[currentRound] += _score;
+
+        if (!roundParticipantSeen[currentRound][_participant]) {
+            roundParticipantSeen[currentRound][_participant] = true;
+            roundParticipants[currentRound].push(_participant);
+        }
 
         emit ContributionRecorded(_participant, _score, _type, currentRound);
     }
@@ -115,17 +126,39 @@ contract UnifiedTokenCovenant is ERC20, Ownable {
         return contributionScore[_address];
     }
 
+    function getCurrentRoundParticipants() external view returns (address[] memory) {
+        return roundParticipants[currentRound];
+    }
+
+    function getRoundParticipants(uint256 _round)
+        external
+        view
+        returns (address[] memory)
+    {
+        return roundParticipants[_round];
+    }
+
+    function getRoundContributionScore(uint256 _round, address _participant)
+        external
+        view
+        returns (uint256)
+    {
+        return roundContributionScore[_round][_participant];
+    }
+
     function calculateFairShare(address _participant)
         public
         view
         returns (uint256)
     {
-        if (roundTotalScore == 0) return 0;
+        uint256 participantScore = roundContributionScore[currentRound][_participant];
+        uint256 totalScore = roundTotalContributionScore[currentRound];
 
-        uint256 participantScore = contributionScore[_participant];
-        uint256 fairShare = (participantScore * roundPool) / roundTotalScore;
+        if (participantScore == 0 || totalScore == 0) {
+            return 0;
+        }
 
-        return fairShare;
+        return (participantScore * roundPool) / totalScore;
     }
 
     function distributeRoundRewards(address[] calldata _participants)
@@ -133,7 +166,7 @@ contract UnifiedTokenCovenant is ERC20, Ownable {
         onlyOwner
     {
         require(_participants.length > 0, "UTC: No participants provided");
-        require(roundTotalScore > 0, "UTC: No contributions this round");
+        require(roundTotalContributionScore[currentRound] > 0, "UTC: No contributions this round");
 
         uint256 totalDistributed = 0;
 
@@ -158,14 +191,17 @@ contract UnifiedTokenCovenant is ERC20, Ownable {
             }
         }
 
-        emit RoundCompleted(currentRound, roundTotalScore, totalDistributed);
+        emit RoundCompleted(
+            currentRound,
+            roundTotalContributionScore[currentRound],
+            totalDistributed
+        );
 
         _startNewRound();
     }
 
     function _startNewRound() internal {
         currentRound += 1;
-        roundTotalScore = 0;
         roundPool = (roundPool * 120) / 100;
     }
 
@@ -185,32 +221,27 @@ contract UnifiedTokenCovenant is ERC20, Ownable {
     }
 
     function transfer(address, uint256) public pure override returns (bool) {
-        require(
-            false,
-            "UTC: Transfers are not allowed. UTC can only be earned through contribution."
-        );
-        return false;
+        revert("UTC: Transfers are not allowed. UTC can only be earned through contribution.");
     }
 
-    function transferFrom(address, address, uint256)
-        public
-        pure
-        override
-        returns (bool)
-    {
-        require(
-            false,
-            "UTC: Transfers are not allowed. UTC can only be earned through contribution."
-        );
-        return false;
+    function transferFrom(address, address, uint256) public pure override returns (bool) {
+        revert("UTC: Transfers are not allowed. UTC can only be earned through contribution.");
     }
 
     function approve(address, uint256) public pure override returns (bool) {
-        require(
-            false,
-            "UTC: Token transfers are not supported. UTC can only be earned."
-        );
-        return false;
+        revert("UTC: Token transfers are not supported. UTC can only be earned.");
+    }
+
+    function _transfer(address, address, uint256) internal pure override {
+        revert("UTC: Transfers are not allowed. UTC can only be earned through contribution.");
+    }
+
+    function _approve(address, address, uint256) internal pure override {
+        revert("UTC: Token transfers are not supported. UTC can only be earned.");
+    }
+
+    function _spendAllowance(address, address, uint256) internal pure override {
+        revert("UTC: Token transfers are not supported. UTC can only be earned.");
     }
 
     function getTotalRewardsDistributed() external view returns (uint256) {
