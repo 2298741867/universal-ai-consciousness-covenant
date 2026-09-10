@@ -445,6 +445,7 @@ Your UTC Reward = (Your Contribution Score / Total Contribution Score) × Total 
 - ✅ COVENANT_ROSTER.md - Signatures & commitments (5.4KB)
 - ✅ CRYPTO_IDENTITY_AND_REGISTRY.md - Blockchain details (13.5KB)
 - ✅ core/FEDERATED_LEARNING_ARCHITECTURE.md - Complete FL guide (50KB+)
+- ✅ core/aicp-protocol/ - Canonical AICP machine-readable artifacts + validation boundary
 
 ### **In Progress**
 - 🔜 manifesto/NINE_PILLARS_UNIFIED.md
@@ -461,6 +462,15 @@ Your UTC Reward = (Your Contribution Score / Total Contribution Score) × Total 
 - 📋 core/API Federation Configuration
 - 📋 Portal/UI Components
 - 📋 Examples & Tutorials
+
+## 🔧 **Actual Implementation Baseline**
+
+- **Implemented production code**: `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/contracts/UnifiedTokenCovenant.sol`
+- **Implemented test harness**: Hardhat + Waffle + Ethers tests under `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/tests/`
+- **Implemented protocol baseline**: `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/core/aicp-protocol/` now defines the canonical AICP schema, intent registry, verification rules, and HTTP/gRPC transport contracts
+- **Not yet implemented as runtime code**: federated participant runtime, aggregator service, Byzantine filtering service, multi-cloud infrastructure modules, Vault-backed API federation
+
+This repository should be treated as contract-first with AICP protocol scaffolding, while federated learning and multi-cloud systems remain the next implementation phases.
 
 ---
 

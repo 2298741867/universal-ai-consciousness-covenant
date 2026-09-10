@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "signature": {
+    "requiredField": "payload.signature",
+    "allowedAlgorithms": [
+      "ecdsa-secp256k1"
+    ],
+    "signedFields": [
+      "version",
+      "message_id",
+      "conversation_id",
+      "reply_to",
+      "from_ai",
+      "to_ai",
+      "message_type",
+      "performative",
+      "timestamp",
+      "intent",
+      "payload",
+      "proof_of_work"
+    ]
+  },
+  "timestamp": {
+    "maxSkewSeconds": 300,
+    "rejectFutureMessages": true,
+    "rejectStaleMessages": true
+  },
+  "replayProtection": {
+    "messageIdRequired": true,
+    "conversationIdRecommended": true
+  },
+  "proofOfWork": {
+    "required": true,
+    "format": "opaque string agreed by peers",
+    "verificationNote": "Difficulty and acceptance thresholds are implementation-specific."
+  }
+}

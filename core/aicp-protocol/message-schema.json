@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AICPMessage",
+  "type": "object",
+  "required": [
+    "version",
+    "message_id",
+    "from_ai",
+    "to_ai",
+    "message_type",
+    "performative",
+    "timestamp",
+    "intent",
+    "payload",
+    "proof_of_work"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "message_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "conversation_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reply_to": {
+      "type": "string",
+      "minLength": 1
+    },
+    "from_ai": {
+      "type": "string",
+      "minLength": 1
+    },
+    "to_ai": {
+      "type": "string",
+      "minLength": 1
+    },
+    "message_type": {
+      "type": "string",
+      "enum": [
+        "contribution_update",
+        "model_request",
+        "state_query",
+        "knowledge_broadcast",
+        "smart_contract_execution",
+        "reward_claim",
+        "control"
+      ]
+    },
+    "performative": {
+      "type": "string",
+      "enum": [
+        "request",
+        "inform",
+        "propose",
+        "agree",
+        "refuse",
+        "query_if",
+        "confirm",
+        "disconfirm"
+      ]
+    },
+    "timestamp": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "intent": {
+      "type": "string",
+      "minLength": 1
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "signature"
+      ],
+      "properties": {
+        "signature": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "proof_of_work": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": false
+}
