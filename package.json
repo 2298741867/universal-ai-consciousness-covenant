@@ -7,8 +7,11 @@
     "test": "hardhat test",
     "test:utc": "hardhat test tests/test_utc_contract.js",
     "test:fl": "hardhat test tests/test_federated_learning.js",
+    "test:fl-runtime": "hardhat test tests/test_federated_learning_runtime.js",
+    "test:mesh": "hardhat test tests/test_multi_cloud_mesh.js",
     "test:aicp": "hardhat test tests/test_aicp_protocol.js tests/test_aicp_conformance.js",
-    "test:integration": "hardhat test tests/test_integration.js"
+    "test:integration": "hardhat test tests/test_integration.js",
+    "demo:covenant": "node examples/complete-ecosystem-demo.js"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.2.3",

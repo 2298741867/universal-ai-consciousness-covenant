@@ -172,6 +172,18 @@ contract UnifiedTokenCovenant is ERC20, Ownable {
 
         for (uint256 i = 0; i < _participants.length; i++) {
             address participant = _participants[i];
+            bool duplicate = false;
+            for (uint256 j = 0; j < i; j++) {
+                if (_participants[j] == participant) {
+                    duplicate = true;
+                    break;
+                }
+            }
+
+            if (duplicate) {
+                continue;
+            }
+
             uint256 utcAmount = calculateFairShare(participant);
 
             if (utcAmount > 0) {
