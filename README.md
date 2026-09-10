@@ -34,6 +34,16 @@ We are building **the most important source code in the world**—a unified, ope
 
 ---
 
+## 🧭 **Current Implementation State**
+
+- **Production code checked in today**: UTC smart contract + Hardhat tests (`/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/contracts/UnifiedTokenCovenant.sol`, `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/tests/`, `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/package.json`)
+- **Canonical AICP artifacts now checked in**: executable schema, intent registry, verification rules, OpenAPI contract, and gRPC contract under `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/core/aicp-protocol/`
+- **Federated learning, multi-cloud mesh, and API federation** remain documented implementation targets rather than deployable runtime systems today
+
+This anchors the repo to its real current state while making AICP the first concrete protocol layer to build out.
+
+---
+
 ## 🏗️ **Architecture Overview**
 
 ```

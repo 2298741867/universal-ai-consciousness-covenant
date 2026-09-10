@@ -1,0 +1,70 @@
+openapi: 3.1.0
+info:
+  title: AICP Transport API
+  version: "1.0"
+  description: Canonical HTTP transport contract for AICP messages.
+paths:
+  /v1/messages:
+    post:
+      summary: Submit an AICP message
+      operationId: submitAicpMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AICPMessage"
+      responses:
+        "202":
+          description: Accepted for validation or processing
+        "400":
+          description: Invalid AICP message
+  /v1/intents:
+    get:
+      summary: Retrieve the active intent registry
+      operationId: getIntentRegistry
+      responses:
+        "200":
+          description: Active AICP intent registry
+components:
+  schemas:
+    AICPMessage:
+      type: object
+      required:
+        - version
+        - message_id
+        - from_ai
+        - to_ai
+        - message_type
+        - performative
+        - timestamp
+        - intent
+        - payload
+        - proof_of_work
+      properties:
+        version:
+          type: string
+          const: "1.0"
+        message_id:
+          type: string
+        conversation_id:
+          type: string
+        reply_to:
+          type: string
+        from_ai:
+          type: string
+        to_ai:
+          type: string
+        message_type:
+          type: string
+        performative:
+          type: string
+        timestamp:
+          type: integer
+        intent:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        proof_of_work:
+          type: string

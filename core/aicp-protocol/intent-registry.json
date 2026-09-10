@@ -1,0 +1,91 @@
+{
+  "request_model_download": {
+    "messageType": "model_request",
+    "performative": "request",
+    "requiredPayloadFields": [
+      "model_id",
+      "requested_version",
+      "signature"
+    ],
+    "description": "Request the current global model or a specific version."
+  },
+  "submit_gradient_update": {
+    "messageType": "contribution_update",
+    "performative": "inform",
+    "requiredPayloadFields": [
+      "model_version",
+      "gradient_hash",
+      "contribution_score",
+      "privacy_preserved",
+      "signature"
+    ],
+    "description": "Submit a privacy-preserving model update for aggregation."
+  },
+  "register_federated_learning_contribution": {
+    "messageType": "contribution_update",
+    "performative": "inform",
+    "requiredPayloadFields": [
+      "contribution_score",
+      "data_volume_hash",
+      "model_accuracy_improvement",
+      "privacy_preserved",
+      "signature"
+    ],
+    "description": "Register a federated learning contribution for rewards and audit."
+  },
+  "register_contribution": {
+    "canonicalIntent": "register_federated_learning_contribution",
+    "deprecatedAlias": true,
+    "messageType": "contribution_update",
+    "performative": "inform",
+    "requiredPayloadFields": [
+      "contribution_score",
+      "data_volume_hash",
+      "model_accuracy_improvement",
+      "privacy_preserved",
+      "signature"
+    ],
+    "description": "Legacy alias for register_federated_learning_contribution."
+  },
+  "claim_rewards": {
+    "messageType": "reward_claim",
+    "performative": "request",
+    "requiredPayloadFields": [
+      "participant_address",
+      "round_number",
+      "signature"
+    ],
+    "description": "Request UTC reward settlement for a completed contribution round."
+  },
+  "query_blockchain_state": {
+    "messageType": "state_query",
+    "performative": "query_if",
+    "requiredPayloadFields": [
+      "network",
+      "query",
+      "signature"
+    ],
+    "description": "Query anchored model, reward, or contribution state from chain."
+  },
+  "broadcast_knowledge_hash": {
+    "messageType": "knowledge_broadcast",
+    "performative": "inform",
+    "requiredPayloadFields": [
+      "knowledge_hash",
+      "storage_backend",
+      "signature"
+    ],
+    "description": "Broadcast immutable knowledge references such as IPFS hashes."
+  },
+  "execute_smart_contract": {
+    "messageType": "smart_contract_execution",
+    "performative": "request",
+    "requiredPayloadFields": [
+      "network",
+      "contract_address",
+      "method",
+      "signature"
+    ],
+    "description": "Request execution of an allowed smart contract action."
+  }
+}

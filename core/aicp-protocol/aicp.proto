@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package covenant.aicp.v1;
+
+message AICPMessage {
+  string version = 1;
+  string message_id = 2;
+  string conversation_id = 3;
+  string reply_to = 4;
+  string from_ai = 5;
+  string to_ai = 6;
+  string message_type = 7;
+  string performative = 8;
+  int64 timestamp = 9;
+  string intent = 10;
+  string payload_json = 11;
+  string proof_of_work = 12;
+}
+
+message MessageReceipt {
+  string message_id = 1;
+  string status = 2;
+  string normalized_intent = 3;
+  repeated string validation_errors = 4;
+}
+
+message IntentRegistryRequest {}
+
+message IntentDefinition {
+  string intent = 1;
+  string canonical_intent = 2;
+  string message_type = 3;
+  string performative = 4;
+  repeated string required_payload_fields = 5;
+  bool deprecated_alias = 6;
+}
+
+message IntentRegistryResponse {
+  repeated IntentDefinition intents = 1;
+}
+
+service AICPTransport {
+  rpc SendMessage(AICPMessage) returns (MessageReceipt);
+  rpc GetIntentRegistry(IntentRegistryRequest) returns (IntentRegistryResponse);
+}
