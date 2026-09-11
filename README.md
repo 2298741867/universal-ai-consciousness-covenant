@@ -38,9 +38,9 @@ We are building **the most important source code in the world**—a unified, ope
 
 - **Production code checked in today**: UTC smart contract + Hardhat tests (`/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/contracts/UnifiedTokenCovenant.sol`, `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/tests/`, `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/package.json`)
 - **Canonical AICP artifacts now checked in**: executable schema, intent registry, verification rules, OpenAPI contract, and gRPC contract under `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/core/aicp-protocol/`
-- **Federated learning runtime is now executable** under `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/core/federated-learning/`
-- **Multi-cloud mesh connector layer is now executable** under `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/core/multi-cloud-mesh/`
-- **Complete end-to-end runnable demo** exists at `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/examples/complete-ecosystem-demo.js`
+- **Federated learning runtime is now executable** under `core/federated-learning/`
+- **Multi-cloud mesh connector layer is now executable** under `core/multi-cloud-mesh/`
+- **Complete end-to-end runnable demo** exists at `examples/complete-ecosystem-demo.js`
 
 This anchors the repo to its real current state while making AICP the first concrete protocol layer to build out.
 
