@@ -11,14 +11,16 @@ class MeshRouter {
   }
 
   async getHealthyProviders() {
-    const checks = await Promise.all(
+    const checks = await Promise.allSettled(
       this.providers.map(async (provider) => ({
         provider,
         healthy: await provider.healthCheck()
       }))
     );
 
-    return checks.filter((check) => check.healthy).map((check) => check.provider);
+    return checks
+      .filter((check) => check.status === "fulfilled" && check.value.healthy)
+      .map((check) => check.value.provider);
   }
 
   async routeAICPMessage(message) {
@@ -35,15 +37,35 @@ class MeshRouter {
       Array.from({ length: Math.max(1, provider.weight || 1) }, () => provider)
     );
 
-    const selected = weighted[this.cursor % weighted.length];
+    const selectedIndex = this.cursor % weighted.length;
+    const selected = weighted[selectedIndex];
     this.cursor += 1;
 
-    const routed = await selected.routeMessage(message);
-    return {
-      selectedProvider: selected.name,
-      selectedRegion: selected.region,
-      routed
-    };
+    const attempted = new Set();
+    let lastError;
+
+    for (let offset = 0; offset < weighted.length; offset += 1) {
+      const candidate = weighted[(selectedIndex + offset) % weighted.length];
+      if (attempted.has(candidate)) {
+        continue;
+      }
+      attempted.add(candidate);
+
+      try {
+        const routed = await candidate.routeMessage(message);
+        return {
+          selectedProvider: candidate.name,
+          selectedRegion: candidate.region,
+          routed
+        };
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw new Error(
+      `Unable to route AICP message across healthy providers: ${lastError?.message || "unknown error"}`
+    );
   }
 
   async deployModelEverywhere(modelId) {

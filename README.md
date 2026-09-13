@@ -70,7 +70,7 @@ Participants (5) --AICP gradient messages--> MeshRouter (AWS/Azure/GCP)
                                   Fair UTC reward map (per round, 1000 UTC pool)
                                                       |
                                                       v
-                                  UTC contract settlement path (Hardhat-tested)
+                               UTC contract settlement (integration pending)
 ```
 
 ---

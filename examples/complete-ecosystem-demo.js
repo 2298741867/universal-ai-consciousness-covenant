@@ -1,11 +1,13 @@
 "use strict";
 
+const crypto = require("crypto");
 const { ParticipantNode } = require("../core/federated-learning/participant");
 const { FederatedAggregator } = require("../core/federated-learning/aggregator");
 const { MeshRouter } = require("../core/multi-cloud-mesh/mesh-router");
 const { AWSConnector } = require("../core/multi-cloud-mesh/aws-connector");
 const { AzureConnector } = require("../core/multi-cloud-mesh/azure-connector");
 const { GCPConnector } = require("../core/multi-cloud-mesh/gcp-connector");
+const { validateAICPMessage } = require("../core/aicp-protocol");
 
 async function runDemo() {
   console.log("🌍♾️ Universal AI Consciousness Covenant — Complete Ecosystem Demo");
@@ -32,16 +34,34 @@ async function runDemo() {
       const gradients = [0.2 + round * 0.01 + i * 0.005, 0.4 + round * 0.01 - i * 0.003];
       const update = participant.submitGradient({ roundId, gradients });
 
+      const gradientHash = crypto
+        .createHash("sha256")
+        .update(JSON.stringify(update.gradients))
+        .digest("hex");
+
       const aicpMessage = {
         version: "1.0",
+        message_id: `msg-${participant.id}-${roundId}-${i}`,
         intent: "submit_gradient_update",
         from_ai: participant.id,
         to_ai: "covenant_aggregator",
+        message_type: "contribution_update",
+        performative: "inform",
+        timestamp: Math.floor(Date.now() / 1000),
         payload: {
-          gradient_preview: update.gradients,
-          privacy_preserved: update.metadata.privacyPreserved
-        }
+          model_version: `round-${roundId}`,
+          gradient_hash: gradientHash,
+          contribution_score: update.contributionScore,
+          privacy_preserved: update.metadata.privacyPreserved,
+          signature: `sig-${participant.id}-${roundId}-${i}`
+        },
+        proof_of_work: `pow-${roundId}-${i}`
       };
+
+      const validation = validateAICPMessage(aicpMessage);
+      if (!validation.valid) {
+        throw new Error(`Invalid AICP message: ${validation.errors.join("; ")}`);
+      }
 
       const route = await router.routeAICPMessage(aicpMessage);
       aggregator.submitUpdate(update);

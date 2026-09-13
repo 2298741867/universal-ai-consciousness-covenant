@@ -110,6 +110,37 @@ describe("Multi-Cloud Mesh", function () {
     expect(error.message).to.equal("No healthy cloud providers available.");
   });
 
+  it("treats rejected health checks as unhealthy and continues", async function () {
+    const router = new MeshRouter();
+    const healthy = new AWSConnector();
+    const unhealthy = new AzureConnector();
+    unhealthy.healthCheck = async () => {
+      throw new Error("probe timeout");
+    };
+
+    router.registerProvider(healthy);
+    router.registerProvider(unhealthy);
+
+    const result = await router.routeAICPMessage({ intent: "route" });
+    expect(result.selectedProvider).to.equal("aws");
+  });
+
+  it("fails over when selected provider route operation rejects", async function () {
+    const router = new MeshRouter();
+    const aws = new AWSConnector({ weight: 1 });
+    const azure = new AzureConnector({ weight: 1 });
+
+    aws.routeMessage = async () => {
+      throw new Error("transient route failure");
+    };
+
+    router.registerProvider(aws);
+    router.registerProvider(azure);
+
+    const result = await router.routeAICPMessage({ intent: "route" });
+    expect(result.selectedProvider).to.equal("azure");
+  });
+
   it("deploys a model to all healthy providers", async function () {
     const router = new MeshRouter();
     const aws = new AWSConnector();

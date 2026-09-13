@@ -50,7 +50,7 @@ class ParticipantNode {
         privacyEpsilon: this.privacyEpsilon,
         clipNorm: this.clipNorm,
         reputation: this.reputation,
-        privacyPreserved: true
+        privacyPreserved: false
       },
       contributionScore
     };
