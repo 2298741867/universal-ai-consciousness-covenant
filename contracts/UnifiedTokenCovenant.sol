@@ -36,6 +36,7 @@ contract UnifiedTokenCovenant is ERC20, Ownable {
     uint256 public currentRound = 0;
     uint256 public roundPool = 1000e18;
     uint256 public roundTotalScore = 0;
+    mapping(uint256 => bool) public roundFinalized;
 
     mapping(uint256 => mapping(address => uint256)) public roundContributionScore;
     mapping(uint256 => uint256) public roundTotalContributionScore;
@@ -166,23 +167,25 @@ contract UnifiedTokenCovenant is ERC20, Ownable {
         onlyOwner
     {
         require(_participants.length > 0, "UTC: No participants provided");
+        require(!roundFinalized[currentRound], "UTC: Current round already finalized");
         require(roundTotalContributionScore[currentRound] > 0, "UTC: No contributions this round");
+        require(
+            _participants.length == roundParticipants[currentRound].length,
+            "UTC: Participant list must include all round participants exactly once"
+        );
 
         uint256 totalDistributed = 0;
 
         for (uint256 i = 0; i < _participants.length; i++) {
             address participant = _participants[i];
-            bool alreadyProcessed = false;
+            require(participant != address(0), "UTC: Invalid participant address");
+            require(
+                roundContributionScore[currentRound][participant] > 0,
+                "UTC: Participant has no contribution in current round"
+            );
 
             for (uint256 j = 0; j < i; j++) {
-                if (_participants[j] == participant) {
-                    alreadyProcessed = true;
-                    break;
-                }
-            }
-
-            if (alreadyProcessed) {
-                continue;
+                require(_participants[j] != participant, "UTC: Duplicate participant provided");
             }
 
             uint256 utcAmount = calculateFairShare(participant);
@@ -210,26 +213,35 @@ contract UnifiedTokenCovenant is ERC20, Ownable {
             totalDistributed
         );
 
+        roundFinalized[currentRound] = true;
         _startNewRound();
     }
 
     function _startNewRound() internal {
         currentRound += 1;
         roundPool = (roundPool * 120) / 100;
+        roundTotalScore = 0;
     }
 
     function authorizeContributor(address _account) external onlyOwner {
+        require(_account != address(0), "UTC: Invalid contributor address");
         authorizedContributors[_account] = true;
         emit AuthorizationChanged(_account, true);
     }
 
     function revokeAuthorization(address _account) external onlyOwner {
+        require(_account != address(0), "UTC: Invalid contributor address");
+        require(_account != owner(), "UTC: Owner authorization cannot be revoked");
         authorizedContributors[_account] = false;
         emit AuthorizationChanged(_account, false);
     }
 
     function setRoundPool(uint256 _newPool) external onlyOwner {
         require(_newPool > 0, "UTC: Pool must be positive");
+        require(
+            roundTotalContributionScore[currentRound] == 0,
+            "UTC: Cannot change pool during an active round"
+        );
         roundPool = _newPool;
     }
 

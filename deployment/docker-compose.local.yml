@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  hardhat-node:
+    image: node:20
+    working_dir: /workspace
+    volumes:
+      - ../:/workspace
+    command: sh -lc "npm install && npx hardhat node"
+    ports:
+      - "8545:8545"
+
+  runtime-tests:
+    image: node:20
+    working_dir: /workspace
+    volumes:
+      - ../:/workspace
+    command: sh -lc "npm install && npm run test:runtime"
+    depends_on:
+      - hardhat-node

@@ -137,18 +137,34 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
       expect(await utcContract.roundPool()).to.equal(ethers.utils.parseEther("1200"));
     });
 
-    it("Should not distribute duplicate rewards for duplicate participant addresses in the same call", async function () {
+    it("Should reject duplicate participant addresses in a reward distribution call", async function () {
       await utcContract.recordContribution(addr1.address, 100, 0, "Contribution");
 
-      await utcContract.distributeRoundRewards([
-        addr1.address,
-        addr1.address,
-      ]);
+      await expect(
+        utcContract.distributeRoundRewards([
+          addr1.address,
+          addr1.address,
+        ])
+      ).to.be.revertedWith("UTC: Duplicate participant provided");
+    });
 
-      expect(await utcContract.balanceOf(addr1.address)).to.equal(
-        ethers.utils.parseEther("1000")
+    it("Should reject distributions that omit a current-round participant", async function () {
+      await utcContract.recordContribution(addr1.address, 80, 0, "Contribution A");
+      await utcContract.recordContribution(addr2.address, 20, 0, "Contribution B");
+
+      await expect(
+        utcContract.distributeRoundRewards([addr1.address])
+      ).to.be.revertedWith(
+        "UTC: Participant list must include all round participants exactly once"
       );
-      expect(await utcContract.getParticipantRewards(addr1.address)).to.have.lengthOf(1);
+    });
+
+    it("Should reject distributions with addresses that did not contribute in the round", async function () {
+      await utcContract.recordContribution(addr1.address, 100, 0, "Contribution");
+
+      await expect(
+        utcContract.distributeRoundRewards([addr2.address])
+      ).to.be.revertedWith("UTC: Participant has no contribution in current round");
     });
   });
 
@@ -196,6 +212,22 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
       await utcContract.authorizeContributor(addr1.address);
       await utcContract.revokeAuthorization(addr1.address);
       expect(await utcContract.authorizedContributors(addr1.address)).to.be.false;
+    });
+
+    it("Should reject zero address authorization changes", async function () {
+      await expect(
+        utcContract.authorizeContributor(ethers.constants.AddressZero)
+      ).to.be.revertedWith("UTC: Invalid contributor address");
+
+      await expect(
+        utcContract.revokeAuthorization(ethers.constants.AddressZero)
+      ).to.be.revertedWith("UTC: Invalid contributor address");
+    });
+
+    it("Should prevent owner authorization from being revoked", async function () {
+      await expect(
+        utcContract.revokeAuthorization(owner.address)
+      ).to.be.revertedWith("UTC: Owner authorization cannot be revoked");
     });
 
     it("Should only allow owner to authorize", async function () {
@@ -250,6 +282,22 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
       await expect(
         utcContract.distributeRoundRewards([addr1.address])
       ).to.be.revertedWith("UTC: No contributions this round");
+    });
+
+    it("Should prevent round pool changes while a round has active contributions", async function () {
+      await utcContract.recordContribution(addr1.address, 100, 0, "Contribution");
+
+      await expect(
+        utcContract.setRoundPool(ethers.utils.parseEther("2000"))
+      ).to.be.revertedWith("UTC: Cannot change pool during an active round");
+    });
+
+    it("Should reset roundTotalScore when a new round starts", async function () {
+      await utcContract.recordContribution(addr1.address, 100, 0, "Contribution");
+      expect(await utcContract.roundTotalScore()).to.equal(100);
+
+      await utcContract.distributeRoundRewards([addr1.address]);
+      expect(await utcContract.roundTotalScore()).to.equal(0);
     });
   });
 

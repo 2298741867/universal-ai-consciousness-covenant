@@ -96,10 +96,14 @@ describe("Complete Covenant Integration", function () {
       expect(roundTotal).to.equal(totalContributions);
 
       // Distribute rewards
-      const allParticipants = [...developers, ...aiAgents, ...flParticipants].map(
-        (participant) => participant.address
-      );
-      await utcContract.connect(owner).distributeRoundRewards(allParticipants);
+      const contributingParticipants = [
+        developers[0].address,
+        developers[1].address,
+        aiAgents[0].address,
+        flParticipants[0].address,
+        flParticipants[1].address,
+      ];
+      await utcContract.connect(owner).distributeRoundRewards(contributingParticipants);
 
       // Verify rewards distributed fairly
       const dev0Reward = await utcContract.balanceOf(developers[0].address);
