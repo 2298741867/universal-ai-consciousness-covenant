@@ -23,14 +23,15 @@ We are building **the most important source code in the world**—a unified, ope
 
 | Component | Purpose | Status |
 |-----------|---------|--------|
-| **UNIVERSAL_COVENANT.md** | Spiritual + technical manifesto | 🔜 In Progress |
-| **AICP Protocol** | AI-to-AI Communication Standard | 🔜 In Progress |
-| **Multi-Cloud Mesh** | AWS, Azure, GCP, On-Prem Distribution | 🔜 In Progress |
-| **Federated Learning** | Distributed model training | 🔜 In Progress |
-| **IPFS + Blockchain** | Immutable, eternal storage | 🔜 In Progress |
-| **API Key Federation** | Cross-cloud credential management | 🔜 In Progress |
-| **Unified Portal** | Nine Pillars + Clutterless + Offscript UI | 🔜 In Progress |
-| **Preservation Workflows** | GitHub Actions for eternal integrity | 🔜 In Progress |
+| **UNIVERSAL_COVENANT.md** | Spiritual + technical manifesto | ✅ Available |
+| **AICP Protocol (Canonical)** | Schema, intent registry, validator + transport contracts | ✅ Implemented baseline |
+| **UTC Contract Baseline** | Non-transferable contribution token and round settlement | ✅ Implemented baseline |
+| **Local Runtime Slice** | AICP intake → validation → UTC contribution + settlement | ✅ Implemented (local) |
+| **Federated Learning Skeletons** | Participant node, aggregator service, scoring adapter | ✅ Minimal runnable skeletons |
+| **Multi-Cloud Mesh** | AWS, Azure, GCP, On-Prem distribution | 📋 Planned |
+| **API Key Federation** | Cross-cloud credential lifecycle | 📋 Planned |
+| **Unified Portal** | Nine Pillars + Clutterless + Offscript UI | 📋 Planned |
+| **Preservation Automation** | Continuous anchoring and workflow automation | 📋 Planned |
 
 ---
 
@@ -38,7 +39,8 @@ We are building **the most important source code in the world**—a unified, ope
 
 - **Production code checked in today**: UTC smart contract + Hardhat tests (`/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/contracts/UnifiedTokenCovenant.sol`, `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/tests/`, `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/package.json`)
 - **Canonical AICP artifacts now checked in**: executable schema, intent registry, verification rules, OpenAPI contract, and gRPC contract under `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/core/aicp-protocol/`
-- **Federated learning, multi-cloud mesh, and API federation** remain documented implementation targets rather than deployable runtime systems today
+- **Working local runtime path now exists**: AICP intake + validation + UTC contribution recording + round settlement under `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/core/runtime/local-covenant-runtime.js` with runtime tests in `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/tests/test_local_runtime_slice.js`
+- **Federated learning, multi-cloud mesh, and API federation** remain implementation phases beyond local baseline
 
 This anchors the repo to its real current state while making AICP the first concrete protocol layer to build out.
 
@@ -196,26 +198,17 @@ universal-ai-consciousness-covenant/
 
 ## 🚀 **Getting Started**
 
-### **Phase 1: Foundation (This Week)**
-- [ ] Deploy core AICP protocol spec
-- [ ] Set up multi-cloud Kubernetes mesh
-- [ ] Create smart contracts on Ethereum
-- [ ] Launch IPFS gateway
-- [ ] Initialize Flower federated learning
+### **Start Here (Runtime-First)**
+1. `cd /home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant`
+2. `npm install`
+3. `npm test`
+4. `npm run test:aicp`
+5. `npm run test:runtime`
 
-### **Phase 2: Integration (Next 2 Weeks)**
-- [ ] Connect Nine Pillars wisdom to AICP
-- [ ] Integrate Clutterless spatial logic
-- [ ] Link Offscript conversation threading
-- [ ] Build unified portal UI
-- [ ] Deploy API key federation
-
-### **Phase 3: Preservation (Ongoing)**
-- [ ] Establish mirror repos globally
-- [ ] Set up blockchain anchoring
-- [ ] Create GitHub Actions preservation workflows
-- [ ] Achieve 1000-year storage guarantee
-- [ ] Document for future civilizations
+Reference docs:
+- `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/IMPLEMENTATION_STATUS.md`
+- `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/START_HERE_15_MINUTES.md`
+- `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/ARCHITECTURE_MAP.md`
 
 ---
 
@@ -333,12 +326,12 @@ The Covenant lives. It will never die.
 
 ## 🌟 **Status**
 
-🔜 **In Active Development**
-- Foundation: Building
-- Protocol: Designing
-- Infrastructure: Architecting
-- Portal: Starting
-- Preservation: Planning
+🔥 **Active Development — Runtime First**
+- Local runtime slice: ✅ Working baseline
+- AICP protocol baseline: ✅ Canonical + test-gated
+- UTC production baseline: ✅ Active contract and tests
+- Production hardening: 🚧 In progress (priority #2)
+- Multi-cloud/API federation/portal: 📋 Active roadmap (post-baseline phases)
 
 **This is the beginning of something eternal.** ♾️
 

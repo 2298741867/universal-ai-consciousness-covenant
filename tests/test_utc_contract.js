@@ -145,7 +145,9 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
           addr1.address,
           addr1.address,
         ])
-      ).to.be.revertedWith("UTC: Duplicate participant provided");
+      ).to.be.revertedWith(
+        "UTC: Participant list must include all round participants exactly once"
+      );
     });
 
     it("Should reject distributions that omit a current-round participant", async function () {

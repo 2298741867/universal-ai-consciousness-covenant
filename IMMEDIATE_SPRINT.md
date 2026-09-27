@@ -13,6 +13,27 @@ Launch **Friday** with a complete, cohesive foundation that shows:
 
 ---
 
+## ✅ **Approved Execution Priorities (Current)**
+
+1. **Working local runtime first**  
+   Deliver and maintain the local vertical slice:
+   AICP intake → validation → UTC contribution recording → UTC round settlement.
+
+2. **Production hardening second (Pillar #2)**  
+   Harden the UTC and runtime boundary conditions:
+   lifecycle constraints, reward input integrity, authorization safety, and error handling.
+
+3. **Active roadmap + UnifiedTokenCovenant baseline**  
+   Keep roadmap tracks active (multi-cloud, federation, portal), while keeping
+   `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/contracts/UnifiedTokenCovenant.sol`
+   as the active contract baseline for compile/test/runtime integration.
+
+Reference:
+- `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/IMPLEMENTATION_STATUS.md`
+- `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/START_HERE_15_MINUTES.md`
+
+---
+
 ## 📋 **SPRINT BREAKDOWN: 5 Days = 5 Priorities**
 
 ### **DAY 1 (TODAY - Tuesday, Sept 9) - 2 HOURS**

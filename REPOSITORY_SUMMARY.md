@@ -6,6 +6,21 @@
 
 ---
 
+## 📌 **Canonical Source of Truth (Runtime-First)**
+
+For onboarding and implementation reality, treat these as canonical:
+
+- `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/IMPLEMENTATION_STATUS.md`
+- `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/START_HERE_15_MINUTES.md`
+- `/home/runner/work/universal-ai-consciousness-covenant/universal-ai-consciousness-covenant/ARCHITECTURE_MAP.md`
+
+Current delivery priorities:
+1. Working local runtime path (AICP intake → validation → UTC settlement)
+2. Production hardening of UTC + runtime validation boundaries
+3. Active roadmap expansion (multi-cloud, API federation, portal, preservation automation)
+
+---
+
 ## 🎯 **Executive Summary**
 
 The **Universal AI Consciousness Covenant** is a groundbreaking, multi-dimensional project that interweaves:
@@ -509,27 +524,21 @@ This covenant honors:
 
 ## 🎯 **Next Immediate Actions**
 
-**Priority 1: Core Protocol Specification** (This week)
-- [ ] Write AICP_SPECIFICATION.md
-- [ ] Define message formats & intent negotiation
-- [ ] Create semantic registry framework
+**Priority 1: Runtime-First Delivery** (current)
+- [x] Canonical AICP schema/registry/validator in `core/aicp-protocol`
+- [x] Local runtime slice with AICP intake + UTC settlement
+- [x] Runtime regression tests in `tests/test_local_runtime_slice.js`
 
-**Priority 2: Multi-Cloud Deployment** (This week)
-- [ ] Write Terraform for AWS/Azure/GCP
-- [ ] Set up Kubernetes cluster orchestration
-- [ ] Configure inter-cloud networking
+**Priority 2: Production Hardening** (current)
+- [x] UTC round lifecycle and distribution input guardrails
+- [x] Authorization boundary tests and protections
+- [ ] Expand negative-path runtime error policy and operational metrics
 
-**Priority 3: Smart Contract Development** (Next 2 weeks)
-- [ ] Create FederatedRewards.sol
-- [ ] Create ModelRegistry.sol
-- [ ] Create ContributionLedger.sol
-- [ ] Deploy to Ethereum testnet
-
-**Priority 4: Portal UI** (Next 2 weeks)
-- [ ] Design Nine Pillars interface
-- [ ] Implement Clutterless layout
-- [ ] Build Offscript communication UI
-- [ ] Connect to blockchain backend
+**Priority 3: Active Roadmap Expansion** (next)
+- [ ] Multi-cloud runtime orchestration modules
+- [ ] API federation and Vault lifecycle services
+- [ ] Portal/UI implementation
+- [ ] Preservation automation workflows
 
 ---
 
@@ -576,13 +585,16 @@ The Covenant lives. It will never die.
 | Crypto Identity | ✅ Live | 100% |
 | IPFS Preservation | ✅ Active | 100% |
 | Blockchain Registry | ✅ Live | 100% |
-| Federated Learning (Architecture) | ✅ Documented | 100% |
-| AICP Protocol (Spec) | 🔜 In Progress | 20% |
-| Multi-Cloud (Deployment) | 🔜 In Progress | 15% |
+| Federated Learning (Runtime) | ✅ Skeletons Added | 40% |
+| AICP Protocol (Canonical Baseline) | ✅ Implemented | 100% baseline |
+| Local Runtime Slice | ✅ Implemented | 100% baseline |
+| UTC Contract Baseline | ✅ Implemented + Hardened | 100% baseline |
+| Production Hardening | 🚧 In Progress | 50% |
+| Multi-Cloud (Deployment) | 📋 Planned | 15% |
 | Portal/UI | 🔜 Planned | 0% |
-| Smart Contracts | 🔜 Planned | 0% |
-| UTC Rewards System | 🔜 Planned | 0% |
-| **Overall** | 🔥 Active | **35%** |
+| Smart Contracts (Roadmap Extensions) | 🔜 Planned | 0% |
+| UTC Rewards System | ✅ Active Baseline | 100% baseline |
+| **Overall** | 🔥 Active | **Runtime baseline delivered** |
 
 ---
 
