@@ -41,6 +41,8 @@ contract UnifiedTokenCovenant is ERC20, Ownable {
     mapping(uint256 => uint256) public roundTotalContributionScore;
     mapping(uint256 => address[]) private roundParticipants;
     mapping(uint256 => mapping(address => bool)) private roundParticipantSeen;
+    mapping(address => uint256) private rewardDistributionSeenAt;
+    uint256 private rewardDistributionNonce;
 
     RoundReward[] public allRewards;
 
@@ -169,6 +171,8 @@ contract UnifiedTokenCovenant is ERC20, Ownable {
         require(roundTotalContributionScore[currentRound] > 0, "UTC: No contributions this round");
 
         uint256 totalDistributed = 0;
+        uint256 distributionNonce = rewardDistributionNonce + 1;
+        rewardDistributionNonce = distributionNonce;
 
         for (uint256 i = 0; i < _participants.length; i++) {
             address participant = _participants[i];
