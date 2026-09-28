@@ -2,6 +2,7 @@
 
 const crypto = require("crypto");
 const express = require("express");
+const { rateLimit } = require("express-rate-limit");
 const sharp = require("sharp");
 const { validateAICPMessage } = require("../../core/aicp-protocol");
 const { getConfig } = require("./config");
@@ -29,6 +30,36 @@ function createApp(options = {}) {
   const db = options.db || createDatabase(options.dbPath || config.dbPath);
   const app = express();
   app.use(express.json({ limit: "8mb" }));
+
+  const globalLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 120,
+    standardHeaders: true,
+    legacyHeaders: false
+  });
+  const authLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 20,
+    standardHeaders: true,
+    legacyHeaders: false
+  });
+  const partnerLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 90,
+    standardHeaders: true,
+    legacyHeaders: false
+  });
+  const adminLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 40,
+    standardHeaders: true,
+    legacyHeaders: false
+  });
+
+  app.use(globalLimiter);
+  app.use("/auth", authLimiter);
+  app.use("/partner", partnerLimiter);
+  app.use("/admin", adminLimiter);
 
   function errorIf(condition, message, details) {
     if (condition) {
