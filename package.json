@@ -11,7 +11,10 @@
     "test:mesh": "hardhat test tests/test_multi_cloud_mesh.js",
     "test:aicp": "hardhat test tests/test_aicp_protocol.js tests/test_aicp_conformance.js",
     "test:integration": "hardhat test tests/test_integration.js",
-    "demo:covenant": "node examples/complete-ecosystem-demo.js"
+    "test:app": "hardhat test tests/test_bringin_it_home_app.js",
+    "demo:covenant": "node examples/complete-ecosystem-demo.js",
+    "app:start": "node app/bringin-it-home/server.js",
+    "app:db:init": "node -e \"require('./app/bringin-it-home/db').createDatabase(require('./app/bringin-it-home/config').getConfig().dbPath).close()\""
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.2.3",
@@ -21,6 +24,12 @@
     "ethereum-waffle": "^3.4.4",
     "ethers": "^5.7.2",
     "hardhat": "^2.22.19",
-    "solc": "0.8.20"
+    "solc": "0.8.20",
+    "supertest": "^7.3.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "express": "^5.2.1",
+    "sharp": "^0.35.5"
   }
 }

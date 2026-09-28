@@ -192,6 +192,16 @@ npm run demo:covenant
 
 Quick-start guide: [`GETTING_STARTED.md`](GETTING_STARTED.md)
 
+Bringin' It Home application slice:
+
+```bash
+npm run app:db:init
+npm run app:start
+npm run test:app
+```
+
+Detailed API docs: [`docs/BRINGIN_IT_HOME_API.md`](docs/BRINGIN_IT_HOME_API.md)
+
 ---
 
 ## 🧪 **Test Coverage Report (Current)**
