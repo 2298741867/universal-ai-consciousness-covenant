@@ -200,8 +200,8 @@ describe("Bringin' It Home API", function () {
           message_type: "state_query",
           performative: "query_if",
           timestamp: Math.floor(Date.now() / 1000),
-          intent: "request_global_state",
-          payload: { requested_scope: "round_status", signature: "sig" },
+          intent: "query_blockchain_state",
+          payload: { network: "local", query: "round_status", signature: "sig" },
           proof_of_work: "pow"
         }
       })
