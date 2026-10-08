@@ -126,6 +126,20 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
       expect(await utcContract.currentRound()).to.equal(1);
     });
 
+    it("Should distribute rewards to every round participant even when input is a subset", async function () {
+      await utcContract.recordContribution(addr1.address, 40, 0, "Contribution 1");
+      await utcContract.recordContribution(addr2.address, 35, 0, "Contribution 2");
+      await utcContract.recordContribution(addr3.address, 25, 0, "Contribution 3");
+
+      await utcContract.distributeRoundRewards([addr1.address]);
+
+      const equalShare = ethers.utils.parseEther("1000").div(3);
+      expect(await utcContract.balanceOf(addr1.address)).to.equal(equalShare);
+      expect(await utcContract.balanceOf(addr2.address)).to.equal(equalShare);
+      expect(await utcContract.balanceOf(addr3.address)).to.equal(equalShare);
+      expect(await utcContract.currentRound()).to.equal(1);
+    });
+
     it("Should grow pool by 20% each round", async function () {
       await utcContract.recordContribution(addr1.address, 100, 0, "Contribution");
       await utcContract.distributeRoundRewards([addr1.address]);
