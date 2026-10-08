@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: bringin-it-home-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true

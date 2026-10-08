@@ -1,0 +1,6 @@
+node_modules
+artifacts
+cache
+.git
+**/.env
+app/bringin-it-home/data

@@ -41,6 +41,14 @@ class FederatedAggregator {
       throw new Error("update.gradients must be a non-empty array.");
     }
 
+    if (!update.gradients.every(Number.isFinite)) {
+      throw new Error("update.gradients must contain only finite numeric values.");
+    }
+
+    if (this.updates.length > 0 && update.gradients.length !== this.updates[0].gradients.length) {
+      throw new Error("update.gradients must match the active round gradient dimensions.");
+    }
+
     this.updates.push(update);
   }
 

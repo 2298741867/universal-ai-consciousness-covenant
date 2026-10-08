@@ -31,18 +31,18 @@ describe("Federated Learning Runtime", function () {
       );
     });
 
-    it("clips gradients and marks privacy preservation", function () {
+    it("clips gradients and marks non-private demo transform", function () {
       const participant = new ParticipantNode({ id: "p1", clipNorm: 1 });
       participant.joinRound(1);
       const update = participant.submitGradient({ roundId: 1, gradients: [3, 4] });
 
       const norm = Math.sqrt(update.gradients.reduce((sum, value) => sum + value * value, 0));
       expect(norm).to.be.lte(1.05);
-      expect(update.metadata.privacyPreserved).to.equal(true);
+      expect(update.metadata.privacyPreserved).to.equal(false);
       expect(update.metadata.privacyEpsilon).to.equal(1);
     });
 
-    it("uses deterministic privacy noise", function () {
+    it("uses deterministic demo noise", function () {
       const participant = new ParticipantNode({ id: "p-alpha", privacyEpsilon: 0.8 });
       participant.joinRound(2);
       const one = participant.submitGradient({ roundId: 2, gradients: [0.2, 0.4, 0.6] });
@@ -91,6 +91,29 @@ describe("Federated Learning Runtime", function () {
       expect(() =>
         aggregator.submitUpdate({ participantId: "p1", roundId: 99, gradients: [0.1] })
       ).to.throw("Update round does not match active round.");
+    });
+
+    it("rejects non-finite gradient values", function () {
+      const aggregator = new FederatedAggregator();
+      aggregator.registerParticipant("p1");
+      aggregator.startRound();
+
+      expect(() =>
+        aggregator.submitUpdate({ participantId: "p1", roundId: 1, gradients: [0.1, NaN] })
+      ).to.throw("update.gradients must contain only finite numeric values.");
+    });
+
+    it("rejects inconsistent gradient dimensions within a round", function () {
+      const aggregator = new FederatedAggregator();
+      aggregator.registerParticipant("p1");
+      aggregator.registerParticipant("p2");
+      aggregator.startRound();
+
+      aggregator.submitUpdate({ participantId: "p1", roundId: 1, gradients: [0.1, 0.2] });
+
+      expect(() =>
+        aggregator.submitUpdate({ participantId: "p2", roundId: 1, gradients: [0.1] })
+      ).to.throw("update.gradients must match the active round gradient dimensions.");
     });
 
     it("rejects finalization without updates", function () {
