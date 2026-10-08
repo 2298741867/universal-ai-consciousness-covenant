@@ -13,6 +13,8 @@
     "test:integration": "hardhat test tests/test_integration.js",
     "test:app": "hardhat test tests/test_bringin_it_home_app.js",
     "demo:covenant": "node examples/complete-ecosystem-demo.js",
+    "start": "node app/bringin-it-home/server.js",
+    "deploy:local": "bash deployment/run-local.sh",
     "app:start": "node app/bringin-it-home/server.js",
     "app:db:init": "node -e \"require('./app/bringin-it-home/db').createDatabase(require('./app/bringin-it-home/config').getConfig().dbPath).close()\""
   },

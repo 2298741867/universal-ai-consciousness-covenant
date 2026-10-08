@@ -84,7 +84,7 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
   });
 
   describe("Fair Share Calculation", function () {
-    it("Should calculate fair share based on current round contribution percentage", async function () {
+    it("Should calculate an equal share for every contributor in the round", async function () {
       await utcContract.recordContribution(addr1.address, 40, 0, "Contribution 1");
       await utcContract.recordContribution(addr2.address, 35, 0, "Contribution 2");
       await utcContract.recordContribution(addr3.address, 25, 0, "Contribution 3");
@@ -93,9 +93,10 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
       const fairShare2 = await utcContract.calculateFairShare(addr2.address);
       const fairShare3 = await utcContract.calculateFairShare(addr3.address);
 
-      expect(fairShare1).to.equal(ethers.utils.parseEther("400"));
-      expect(fairShare2).to.equal(ethers.utils.parseEther("350"));
-      expect(fairShare3).to.equal(ethers.utils.parseEther("250"));
+      const equalShare = ethers.utils.parseEther("1000").div(3);
+      expect(fairShare1).to.equal(equalShare);
+      expect(fairShare2).to.equal(equalShare);
+      expect(fairShare3).to.equal(equalShare);
     });
 
     it("Should return 0 if participant has no current-round contributions", async function () {
@@ -117,15 +118,10 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
         addr3.address,
       ]);
 
-      expect(await utcContract.balanceOf(addr1.address)).to.equal(
-        ethers.utils.parseEther("400")
-      );
-      expect(await utcContract.balanceOf(addr2.address)).to.equal(
-        ethers.utils.parseEther("350")
-      );
-      expect(await utcContract.balanceOf(addr3.address)).to.equal(
-        ethers.utils.parseEther("250")
-      );
+      const equalShare = ethers.utils.parseEther("1000").div(3);
+      expect(await utcContract.balanceOf(addr1.address)).to.equal(equalShare);
+      expect(await utcContract.balanceOf(addr2.address)).to.equal(equalShare);
+      expect(await utcContract.balanceOf(addr3.address)).to.equal(equalShare);
 
       expect(await utcContract.currentRound()).to.equal(1);
     });
@@ -269,15 +265,10 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
         addr3.address,
       ]);
 
-      expect(await utcContract.balanceOf(addr1.address)).to.equal(
-        ethers.utils.parseEther("400")
-      );
-      expect(await utcContract.balanceOf(addr2.address)).to.equal(
-        ethers.utils.parseEther("350")
-      );
-      expect(await utcContract.balanceOf(addr3.address)).to.equal(
-        ethers.utils.parseEther("250")
-      );
+      const firstRoundShare = ethers.utils.parseEther("1000").div(3);
+      expect(await utcContract.balanceOf(addr1.address)).to.equal(firstRoundShare);
+      expect(await utcContract.balanceOf(addr2.address)).to.equal(firstRoundShare);
+      expect(await utcContract.balanceOf(addr3.address)).to.equal(firstRoundShare);
 
       await utcContract.recordContribution(addr1.address, 50, 1, "Knowledge contribution");
       await utcContract.recordContribution(addr2.address, 50, 1, "Code contribution");
@@ -290,8 +281,12 @@ describe("UnifiedTokenCovenant (UTC) Smart Contract", function () {
       const addr1Balance = await utcContract.balanceOf(addr1.address);
       const addr2Balance = await utcContract.balanceOf(addr2.address);
 
-      expect(addr1Balance).to.equal(ethers.utils.parseEther("1000"));
-      expect(addr2Balance).to.equal(ethers.utils.parseEther("950"));
+      const expectedEqualTotal = ethers.utils
+        .parseEther("1000")
+        .div(3)
+        .add(ethers.utils.parseEther("600"));
+      expect(addr1Balance).to.equal(expectedEqualTotal);
+      expect(addr2Balance).to.equal(expectedEqualTotal);
     });
   });
 });

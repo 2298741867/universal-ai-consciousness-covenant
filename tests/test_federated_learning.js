@@ -47,10 +47,9 @@ describe("Federated Learning Integration with UTC", function () {
         .connect(owner)
         .distributeRoundRewards([participant1.address, participant2.address]);
 
-      const totalScore = ethers.BigNumber.from(410);
       const pool = ethers.utils.parseEther("1000");
-      const expected1 = pool.mul(230).div(totalScore);
-      const expected2 = pool.mul(180).div(totalScore);
+      const expected1 = pool.div(2);
+      const expected2 = pool.div(2);
 
       expect(await utcContract.balanceOf(participant1.address)).to.equal(expected1);
       expect(await utcContract.balanceOf(participant2.address)).to.equal(expected2);
@@ -70,8 +69,8 @@ describe("Federated Learning Integration with UTC", function () {
     });
   });
 
-  describe("Quality Weighting", function () {
-    it("Should weight contributions by model improvement quality", async function () {
+  describe("Equal Distribution", function () {
+    it("Should share rewards equally regardless of contribution score", async function () {
       await utcContract
         .connect(aggregator)
         .recordContribution(participant1.address, 250, 0, "High-quality FL contribution");
@@ -84,8 +83,8 @@ describe("Federated Learning Integration with UTC", function () {
       const share2 = await utcContract.calculateFairShare(participant2.address);
 
       const pool = ethers.utils.parseEther("1000");
-      expect(share1).to.equal(pool.mul(250).div(300));
-      expect(share2).to.equal(pool.mul(50).div(300));
+      expect(share1).to.equal(pool.div(2));
+      expect(share2).to.equal(pool.div(2));
     });
   });
 
@@ -123,8 +122,8 @@ describe("Federated Learning Integration with UTC", function () {
       const share2 = await utcContract.calculateFairShare(participant2.address);
 
       const pool = ethers.utils.parseEther("1000");
-      expect(share1).to.equal(pool.mul(100).div(110));
-      expect(share2).to.equal(pool.mul(10).div(110));
+      expect(share1).to.equal(pool.div(2));
+      expect(share2).to.equal(pool.div(2));
     });
   });
 

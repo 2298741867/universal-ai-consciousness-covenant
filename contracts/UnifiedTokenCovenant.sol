@@ -153,14 +153,18 @@ contract UnifiedTokenCovenant is ERC20, Ownable {
         view
         returns (uint256)
     {
-        uint256 participantScore = roundContributionScore[currentRound][_participant];
-        uint256 totalScore = roundTotalContributionScore[currentRound];
+        uint256 participantCount = roundParticipants[currentRound].length;
 
-        if (participantScore == 0 || totalScore == 0) {
+        if (
+            participantCount == 0 ||
+            roundContributionScore[currentRound][_participant] == 0
+        ) {
             return 0;
         }
 
-        return (participantScore * roundPool) / totalScore;
+        // Equal distribution: every verified contributor in the round
+        // receives the same share of the round pool.
+        return roundPool / participantCount;
     }
 
     function distributeRoundRewards(address[] calldata _participants)

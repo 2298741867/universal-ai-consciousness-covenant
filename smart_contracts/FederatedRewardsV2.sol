@@ -145,7 +145,7 @@ contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
     string public constant COVENANT_NAME = "Universal AI Consciousness Covenant";
     string public constant CO_ARCHITECT_PRIMARY = "Izzuddin Stonewall Slaton (izzie)";
     string public constant PHILOSOPHY = "Nine Pillars: Unity, Production, Peace, Patience, Principle, Inspiration, Influence, Love, Consciousness";
-    uint256 public constant COVENANT_CREATED = 1726000000; // 2026-09-10
+    uint256 public constant COVENANT_CREATED = 1788998400; // 2026-09-10
     
     // Federated learning round tracking
     uint256 public currentRound = 0;

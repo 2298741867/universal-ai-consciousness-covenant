@@ -108,10 +108,11 @@ describe("Complete Covenant Integration", function () {
       const fl0Reward = await utcContract.balanceOf(flParticipants[0].address);
 
       const pool = ethers.utils.parseEther("1000");
-      expect(dev0Reward).to.equal(pool.mul(100).div(405));
-      expect(dev1Reward).to.equal(pool.mul(80).div(405));
-      expect(ai0Reward).to.equal(pool.mul(90).div(405));
-      expect(fl0Reward).to.equal(pool.mul(70).div(405));
+      const equalShare = pool.div(5); // 5 contributors, equal split
+      expect(dev0Reward).to.equal(equalShare);
+      expect(dev1Reward).to.equal(equalShare);
+      expect(ai0Reward).to.equal(equalShare);
+      expect(fl0Reward).to.equal(equalShare);
     });
 
     it("Should sustain multi-round ecosystem growth", async function () {
