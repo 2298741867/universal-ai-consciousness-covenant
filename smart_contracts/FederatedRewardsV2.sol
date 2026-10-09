@@ -59,7 +59,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 /**
  * @title IZKVerifier
@@ -90,7 +89,7 @@ contract UTC is ERC20, Ownable {
         address indexed participant,
         uint256 amount,
         string contributionType,
-        bytes32 federatedLearningRound
+        uint256 federatedLearningRound
     );
     
     event BurnedForGovernance(
@@ -99,7 +98,7 @@ contract UTC is ERC20, Ownable {
         string reason
     );
     
-    constructor() ERC20("Universal Trust Coin", "UTC") {
+    constructor() ERC20("Universal Trust Coin", "UTC") Ownable(msg.sender) {
         // Initial supply can be set or left at zero
         // All tokens are minted as contributions are verified
     }
@@ -108,7 +107,7 @@ contract UTC is ERC20, Ownable {
         address participant,
         uint256 amount,
         string calldata contributionType,
-        bytes32 federatedLearningRound
+        uint256 federatedLearningRound
     ) external onlyOwner returns (bool) {
         _mint(participant, amount);
         emit MintedForContribution(participant, amount, contributionType, federatedLearningRound);
@@ -134,7 +133,6 @@ contract UTC is ERC20, Ownable {
 contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
     
     using ECDSA for bytes32;
-    using MerkleProof for bytes32[];
     
     // ============================================================================
     // STATE VARIABLES
@@ -147,7 +145,7 @@ contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
     string public constant COVENANT_NAME = "Universal AI Consciousness Covenant";
     string public constant CO_ARCHITECT_PRIMARY = "Izzuddin Stonewall Slaton (izzie)";
     string public constant PHILOSOPHY = "Nine Pillars: Unity, Production, Peace, Patience, Principle, Inspiration, Influence, Love, Consciousness";
-    uint256 public constant COVENANT_CREATED = 1726000000; // 2026-09-10
+    uint256 public constant COVENANT_CREATED = 1788998400; // 2026-09-10
     
     // Federated learning round tracking
     uint256 public currentRound = 0;
@@ -234,7 +232,7 @@ contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
         uint256 accuracyBonus; // Extra rewards for model improvement
         uint256 privacyBudgetBonus; // Rewards for differential privacy usage
         uint256 earlyParticipationBonus; // Rewards for joining early rounds
-        uint256 Byzantine adversarialPenalty; // Penalty factor for poisoned updates
+        uint256 byzantineAdversarialPenalty; // Penalty factor for poisoned updates
     }
     
     RewardPolicy public rewardPolicy;
@@ -289,7 +287,7 @@ contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
     );
     
     event GlobalContributorRegistered(
-        string indexed name,
+        string name,
         string organization,
         string contribution
     );
@@ -312,6 +310,7 @@ contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
     
     modifier onlyDuringRound(uint256 roundId) {
         require(
+            federatedRounds[roundId].startTime != 0 &&
             block.timestamp >= federatedRounds[roundId].startTime &&
             block.timestamp <= federatedRounds[roundId].endTime,
             "Not during active federated round"
@@ -331,7 +330,7 @@ contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
     // CONSTRUCTOR & INITIALIZATION
     // ============================================================================
     
-    constructor(address _zkVerifier) {
+    constructor(address _zkVerifier) Ownable(msg.sender) {
         zkVerifier = IZKVerifier(_zkVerifier);
         utcToken = new UTC();
         
@@ -341,7 +340,7 @@ contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
             accuracyBonus: 50 * 10**18,        // Up to 50 UTC for accuracy improvement
             privacyBudgetBonus: 25 * 10**18,   // 25 UTC for differential privacy
             earlyParticipationBonus: 10 * 10**18, // 10 UTC for early joiners
-            Byzantine adversarialPenalty: 1000   // 10x penalty for Byzantine
+            byzantineAdversarialPenalty: 1000   // 10x penalty for Byzantine
         });
         
         // Register initial contributors
@@ -385,6 +384,7 @@ contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
      * @param trainingSteps Number of gradient steps performed
      * @param modelAccuracy Final model accuracy (basis points)
      * @param zkProof Zero-knowledge proof of honest local training
+     * @param attestationData Raw attestation proof payload (SGX, TDX, etc.)
      * @param attestationProof Hardware/software attestation (SGX, TDX, etc.)
      * @param infrastructureProvider Cloud provider used (AWS, Azure, GCP, etc.)
      * @param isPrivacyPreserving Whether differential privacy was applied
@@ -395,6 +395,7 @@ contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
         uint256 trainingSteps,
         uint256 modelAccuracy,
         bytes calldata zkProof,
+        bytes calldata attestationData,
         bytes32 attestationProof,
         string calldata infrastructureProvider,
         bool isPrivacyPreserving,
@@ -404,6 +405,8 @@ contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
         require(trainingSteps > 0, "Must perform training steps");
         require(modelAccuracy > 0 && modelAccuracy <= 10000, "Invalid accuracy (0-10000 basis points)");
         require(zkProof.length > 0, "ZK proof required");
+        require(attestationData.length > 0, "Attestation data required");
+        require(!participantProfiles[msg.sender].blacklisted, "Participant blacklisted");
         
         // Create or update participant profile
         if (participantProfiles[msg.sender].wallet == address(0)) {
@@ -420,6 +423,10 @@ contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
             allParticipants.push(msg.sender);
             emit ParticipantProfileCreated(msg.sender, githubHandle, block.timestamp);
         }
+
+        if (bytes(githubHandle).length > 0) {
+            participantProfiles[msg.sender].githubHandle = githubHandle;
+        }
         
         // Verify ZK proof of honest training
         uint256[] memory publicInputs = new uint256[](3);
@@ -431,7 +438,7 @@ contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
         
         // Verify hardware/software attestation
         bool attestationValid = zkVerifier.verifyAttestationProof(
-            zkProof,
+            attestationData,
             attestationProof,
             msg.sender
         );
@@ -480,53 +487,98 @@ contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
             infrastructureProvider
         );
         
-        emit ZKProofVerified(msg.sender, currentRound, "LocalTraining");
+        if (zkProofValid && attestationValid) {
+            emit ZKProofVerified(msg.sender, currentRound, "LocalTraining");
+        }
     }
     
     /**
      * @dev Verify contributions and calculate rewards (called after round ends)
-     * Uses Byzantine-robust aggregation to identify malicious participants
+     * Uses Byzantine-robust aggregation to identify malicious participants.
      */
     function verifyRoundContributions(
         uint256 roundId,
-        bytes32[] calldata merkleProof,
         uint256[] calldata accuracyThresholds
     ) external onlyOwner whenNotPaused {
         
         require(!federatedRounds[roundId].finalized, "Round already finalized");
+        require(federatedRounds[roundId].startTime != 0, "Round does not exist");
         require(block.timestamp > federatedRounds[roundId].endTime, "Round still active");
         
         uint256 rewardPoolPerParticipant = rewardPolicy.baseRewardPerRound;
         address[] storage participants = roundParticipants[roundId];
+
+        if (participants.length == 0) {
+            federatedRounds[roundId].finalized = true;
+            emit FederatedRoundFinalized(roundId, 0, federatedRounds[roundId].modelHashIPFS);
+            return;
+        }
         
-        // Byzantine-robust verification: median-based filtering
-        uint256[] memory accuracies = new uint256[](participants.length);
+        // Byzantine-robust verification: median-based filtering using verified submissions only
+        uint256 verifiedCount = 0;
         for (uint256 i = 0; i < participants.length; i++) {
-            accuracies[i] = contributions[roundId][participants[i]].modelAccuracy;
+            if (contributions[roundId][participants[i]].verified) {
+                verifiedCount++;
+            }
+        }
+        if (verifiedCount == 0) {
+            federatedRounds[roundId].finalized = true;
+            emit FederatedRoundFinalized(roundId, 0, federatedRounds[roundId].modelHashIPFS);
+            return;
+        }
+
+        uint256[] memory accuracies = new uint256[](verifiedCount);
+        uint256 accuracyIndex = 0;
+        for (uint256 i = 0; i < participants.length; i++) {
+            Contribution storage contribution = contributions[roundId][participants[i]];
+            if (contribution.verified) {
+                accuracies[accuracyIndex] = contribution.modelAccuracy;
+                accuracyIndex++;
+            }
         }
         
         // Sort accuracies to find median (simple Byzantine defense)
         uint256 medianAccuracy = _findMedian(accuracies);
         uint256 toleranceWindow = (medianAccuracy * 20) / 100; // ±20% tolerance
-        
+        uint256 lowerBound = medianAccuracy > toleranceWindow ? medianAccuracy - toleranceWindow : 0;
+        uint256 upperBound = medianAccuracy + toleranceWindow;
+        if (upperBound > 10000) {
+            upperBound = 10000;
+        }
+
+        require(
+            accuracyThresholds.length == 0 || accuracyThresholds.length == 2,
+            "accuracyThresholds must be empty or [lower,upper]"
+        );
+        if (accuracyThresholds.length == 2) {
+            require(
+                accuracyThresholds[0] == lowerBound && accuracyThresholds[1] == upperBound,
+                "accuracyThresholds mismatch derived bounds"
+            );
+        }
+
         for (uint256 i = 0; i < participants.length; i++) {
             address participant = participants[i];
             Contribution storage contribution = contributions[roundId][participant];
             
             uint256 accuracy = contribution.modelAccuracy;
-            bool isOutlier = (accuracy < medianAccuracy - toleranceWindow) ||
-                            (accuracy > medianAccuracy + toleranceWindow);
+            bool isOutlier = (accuracy < lowerBound) || (accuracy > upperBound);
             
-            if (isOutlier && !contribution.verified) {
-                // Byzantine participant detected
-                emit ByzantineParticipantDetected(roundId, participant, rewardPoolPerParticipant);
-                
+            if (!contribution.verified) {
+                continue;
+            }
+
+            participantProfiles[participant].totalContributions++;
+            participantProfiles[participant].roundsParticipated++;
+
+            if (isOutlier) {
                 // Slash rewards
-                uint256 slashAmount = (rewardPoolPerParticipant * rewardPolicy.Byzantine adversarialPenalty) / 1000;
+                uint256 slashAmount = (rewardPoolPerParticipant * rewardPolicy.byzantineAdversarialPenalty) / 1000;
+                emit ByzantineParticipantDetected(roundId, participant, slashAmount);
                 byzantineEvents.push(ByzantineDetection({
                     roundId: roundId,
                     maliciousParticipant: participant,
-                    evidence: keccak256(abi.encodePacked(accuracy, medianAccuracy)),
+                    evidence: keccak256(abi.encodePacked(roundId, participant, accuracy, medianAccuracy)),
                     slashAmount: slashAmount,
                     confirmed: true
                 }));
@@ -560,13 +612,11 @@ contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
                 participant,
                 rewardAmount,
                 "FederatedLearning",
-                bytes32(roundId)
+                roundId
             );
             
             // Update participant profile
             participantProfiles[participant].totalRewardsEarned += rewardAmount;
-            participantProfiles[participant].totalContributions++;
-            participantProfiles[participant].roundsParticipated++;
             
             emit ContributionVerified(
                 roundId,
@@ -595,14 +645,14 @@ contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
      * This creates an immutable record of collaborative creation
      */
     function registerGlobalContributor(
-        string calldata name,
-        string calldata organization,
-        string calldata contribution,
-        string calldata url,
+        string memory name,
+        string memory organization,
+        string memory contribution,
+        string memory url,
         bool isHuman,
         bool isAI,
         bool isOrganization
-    ) external onlyOwner {
+    ) public onlyOwner {
         
         require(bytes(name).length > 0, "Name required");
         require(bytes(contribution).length > 0, "Contribution description required");
@@ -834,22 +884,43 @@ contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
      */
     function _findMedian(uint256[] memory values) internal pure returns (uint256) {
         require(values.length > 0, "Empty array");
-        
-        // Simple bubble sort for finding median
-        for (uint256 i = 0; i < values.length; i++) {
-            for (uint256 j = i + 1; j < values.length; j++) {
-                if (values[i] > values[j]) {
-                    uint256 temp = values[i];
-                    values[i] = values[j];
-                    values[j] = temp;
-                }
-            }
-        }
+
+        _quickSort(values, 0, int256(values.length - 1));
         
         if (values.length % 2 == 0) {
             return (values[values.length / 2 - 1] + values[values.length / 2]) / 2;
         } else {
             return values[values.length / 2];
+        }
+    }
+
+    function _quickSort(uint256[] memory arr, int256 left, int256 right) internal pure {
+        int256 i = left;
+        int256 j = right;
+        if (i >= j) {
+            return;
+        }
+
+        uint256 pivot = arr[uint256(left + (right - left) / 2)];
+        while (i <= j) {
+            while (arr[uint256(i)] < pivot) {
+                i++;
+            }
+            while (arr[uint256(j)] > pivot) {
+                j--;
+            }
+            if (i <= j) {
+                (arr[uint256(i)], arr[uint256(j)]) = (arr[uint256(j)], arr[uint256(i)]);
+                i++;
+                j--;
+            }
+        }
+
+        if (left < j) {
+            _quickSort(arr, left, j);
+        }
+        if (i < right) {
+            _quickSort(arr, i, right);
         }
     }
     
@@ -861,6 +932,7 @@ contract FederatedRewardsV2 is Ownable, Pausable, ReentrancyGuard {
         view
         returns (FederatedRound memory)
     {
+        require(federatedRounds[roundId].startTime != 0, "Round does not exist");
         return federatedRounds[roundId];
     }
     

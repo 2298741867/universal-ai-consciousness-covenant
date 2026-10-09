@@ -58,7 +58,7 @@ class FederatedAggregator {
     }
 
     const aggregatedGradient = this.#trimmedMean(this.updates.map((item) => item.gradients));
-    const rewardMap = this.#distributeRewards(this.updates, aggregatedGradient);
+    const rewardMap = this.#distributeRewards(this.updates);
 
     const summary = {
       roundId: this.roundId,
@@ -87,25 +87,14 @@ class FederatedAggregator {
     return aggregate;
   }
 
-  #distributeRewards(updates, aggregate) {
-    const scored = updates.map((update) => {
-      const alignment = aggregate.reduce(
-        (sum, value, index) => sum + Math.abs(value - update.gradients[index]),
-        0
-      );
-      const quality = 1 / (1 + alignment);
-      const score = quality * Math.max(update.contributionScore || 0, 0.0001);
-      return {
-        participantId: update.participantId,
-        score
-      };
-    });
+  #distributeRewards(updates) {
+    // Equal distribution: the round pool is split evenly among every
+    // participant who contributed an update this round.
+    const uniqueParticipants = [...new Set(updates.map((update) => update.participantId))];
+    const equalShare = this.utcPoolPerRound / uniqueParticipants.length;
 
-    const totalScore = scored.reduce((sum, item) => sum + item.score, 0);
-
-    return scored.reduce((result, item) => {
-      const reward = (item.score / totalScore) * this.utcPoolPerRound;
-      result[item.participantId] = Number(reward.toFixed(4));
+    return uniqueParticipants.reduce((result, participantId) => {
+      result[participantId] = Number(equalShare.toFixed(4));
       return result;
     }, {});
   }

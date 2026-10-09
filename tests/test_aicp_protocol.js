@@ -102,15 +102,10 @@ describe("AICP Protocol - AI-to-AI Communication", function () {
 
       await utcContract.distributeRoundRewards([ai1.address, ai2.address, ai3.address]);
 
-      expect(await utcContract.balanceOf(ai1.address)).to.equal(
-        ethers.utils.parseEther("400")
-      );
-      expect(await utcContract.balanceOf(ai2.address)).to.equal(
-        ethers.utils.parseEther("350")
-      );
-      expect(await utcContract.balanceOf(ai3.address)).to.equal(
-        ethers.utils.parseEther("250")
-      );
+      const equalShare = ethers.utils.parseEther("1000").div(3);
+      expect(await utcContract.balanceOf(ai1.address)).to.equal(equalShare);
+      expect(await utcContract.balanceOf(ai2.address)).to.equal(equalShare);
+      expect(await utcContract.balanceOf(ai3.address)).to.equal(equalShare);
 
       expect(await utcContract.currentRound()).to.equal(1);
     });

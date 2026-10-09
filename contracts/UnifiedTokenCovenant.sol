@@ -153,14 +153,18 @@ contract UnifiedTokenCovenant is ERC20, Ownable {
         view
         returns (uint256)
     {
-        uint256 participantScore = roundContributionScore[currentRound][_participant];
-        uint256 totalScore = roundTotalContributionScore[currentRound];
+        uint256 participantCount = roundParticipants[currentRound].length;
 
-        if (participantScore == 0 || totalScore == 0) {
+        if (
+            participantCount == 0 ||
+            roundContributionScore[currentRound][_participant] == 0
+        ) {
             return 0;
         }
 
-        return (participantScore * roundPool) / totalScore;
+        // Equal distribution: every verified contributor in the round
+        // receives the same share of the round pool.
+        return roundPool / participantCount;
     }
 
     function distributeRoundRewards(address[] calldata _participants)
@@ -174,20 +178,9 @@ contract UnifiedTokenCovenant is ERC20, Ownable {
         uint256 distributionNonce = rewardDistributionNonce + 1;
         rewardDistributionNonce = distributionNonce;
 
-        for (uint256 i = 0; i < _participants.length; i++) {
-            address participant = _participants[i];
-            bool alreadyProcessed = false;
-
-            for (uint256 j = 0; j < i; j++) {
-                if (_participants[j] == participant) {
-                    alreadyProcessed = true;
-                    break;
-                }
-            }
-
-            if (alreadyProcessed) {
-                continue;
-            }
+        address[] storage participants = roundParticipants[currentRound];
+        for (uint256 i = 0; i < participants.length; i++) {
+            address participant = participants[i];
 
             uint256 utcAmount = calculateFairShare(participant);
 

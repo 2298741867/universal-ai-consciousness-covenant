@@ -29,6 +29,9 @@ function createApp(options = {}) {
   const config = options.config || getConfig();
   const db = options.db || createDatabase(options.dbPath || config.dbPath);
   const app = express();
+  // Trust one proxy hop (e.g. Codespaces / cloud load balancer) so rate
+  // limiting sees the real client IP from X-Forwarded-For.
+  app.set("trust proxy", 1);
   app.use(express.json({ limit: "8mb" }));
 
   const globalLimiter = rateLimit({

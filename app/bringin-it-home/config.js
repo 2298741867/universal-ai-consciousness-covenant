@@ -7,6 +7,10 @@ function getConfig() {
     ? path.resolve(process.env.BRINGIN_HOME_DATA_DIR)
     : path.resolve(process.cwd(), "app", "bringin-it-home", "data");
 
+  if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET must be set when NODE_ENV=production");
+  }
+
   return {
     env: process.env.NODE_ENV || "development",
     port: Number(process.env.PORT || 3000),

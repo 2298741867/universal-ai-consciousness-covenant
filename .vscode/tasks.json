@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "app:start",
+			"problemMatcher": [
+				"$msCompile"
+			],
+			"label": "npm: app:start",
+			"detail": "node app/bringin-it-home/server.js"
+		}
+	]
+}

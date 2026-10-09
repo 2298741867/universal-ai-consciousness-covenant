@@ -1,0 +1,47 @@
+# Google Cloud Build: build the Dockerfile image and deploy to Cloud Run.
+# One-shot equivalent of render.yaml / railway.json for Google Cloud.
+#
+# Usage:
+#   gcloud builds submit --config cloudbuild.yaml
+#
+# Requires (one-time setup):
+#   gcloud services enable cloudbuild.googleapis.com run.googleapis.com artifactregistry.googleapis.com
+#   gcloud artifacts repositories create bringin-it-home --repository-format=docker --location=us-central1
+#   gcloud secrets create JWT_SECRET --data-file=-   # or set via console
+
+substitutions:
+  _REGION: us-central1
+  _SERVICE: bringin-it-home-api
+  _REPO: bringin-it-home
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$BUILD_ID
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:latest
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$BUILD_ID
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --port=8080
+      - --set-secrets=JWT_SECRET=jwt-secret:latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY

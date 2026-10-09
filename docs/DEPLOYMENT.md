@@ -1,5 +1,20 @@
 # Deployment Guide
 
+## Bringin' It Home API hosting
+
+The same [Dockerfile](../Dockerfile) deploys to all three platforms:
+
+- **Google Cloud Run** — see [cloudbuild.yaml](../cloudbuild.yaml):
+  ```bash
+  gcloud services enable cloudbuild.googleapis.com run.googleapis.com artifactregistry.googleapis.com
+  gcloud artifacts repositories create bringin-it-home --repository-format=docker --location=us-central1
+  gcloud builds submit --config cloudbuild.yaml
+  ```
+- **Render** — see [render.yaml](../render.yaml)
+- **Railway** — see [railway.json](../railway.json)
+
+All platforms expose the `/health` health check and expect `JWT_SECRET` to be provided as a secret/env var.
+
 ## Multi-cloud mesh runtime
 
 The repository now includes a cloud-agnostic routing layer:
