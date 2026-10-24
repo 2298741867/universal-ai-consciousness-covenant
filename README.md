@@ -48,6 +48,13 @@ This anchors the repo to its real current state while making AICP the first conc
 
 ## ✅ **What's Implemented (Runs Today)**
 
+The application API now includes [funded contribution rewards in Stripe Connect
+test mode](docs/FUNDED_REWARDS.md): signed sponsor-funding webhooks, independent
+evidence review, proportional cent allocations, onboarding, and idempotent
+transfers with reconciliation. This is a backend milestone, not a public rewards
+UI or a live cash-payout service. UTC credits remain separate, and YouTube/Spotify
+listening is not eligible for these funded rewards.
+
 | Component | Artifact | Runtime Status |
 |-----------|----------|----------------|
 | AICP canonical protocol | `core/aicp-protocol/` | ✅ Executable validation + transport contracts |

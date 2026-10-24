@@ -42,9 +42,9 @@ describe("Bringin' It Home API", function () {
 
     await api.post("/auth/register").send({
       email: "admin@example.com",
-      password: "strongpass123",
-      role: "admin"
+      password: "strongpass123"
     }).expect(201);
+    app.locals.db.prepare("UPDATE users SET role = 'admin' WHERE email = ?").run("admin@example.com");
     await api.post("/auth/register").send({
       email: "user@example.com",
       password: "strongpass123"
@@ -61,6 +61,10 @@ describe("Bringin' It Home API", function () {
       password: "strongpass123"
     }).expect(200);
     userToken = userLogin.body.token;
+  });
+
+  afterEach(function () {
+    app.locals.db.close();
   });
 
   it("registers/login users and returns structured validation errors", async function () {
