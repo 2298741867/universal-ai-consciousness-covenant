@@ -54,6 +54,17 @@ function createRewards({ db, config, stripe: injectedStripe, authRequired, admin
     if (!row) throw notFound("Funding pool not found.");
     return row;
   };
+  function assertTransferMatchesReward(reward, transfer) {
+    if (transfer.livemode !== false || transfer.amount !== reward.amount_cents ||
+      transfer.currency !== "usd" || transfer.destination !== reward.destination ||
+      transfer.source_transaction !== fundingById(reward.funding_id).charge_id ||
+      transfer.transfer_group !== `cash_reward_${reward.id}` ||
+      (transfer.amount_reversed !== undefined &&
+        (!Number.isSafeInteger(transfer.amount_reversed) || transfer.amount_reversed < 0 ||
+          transfer.amount_reversed > reward.amount_cents))) {
+      throw conflict("Stripe transfer does not match the reserved reward; manual reconciliation is required.");
+    }
+  }
   const requireProvider = () => {
     if (!stripe) throw new AppError(503, "REWARDS_DISABLED", "Configure Stripe test mode to enable funded rewards.");
   };
@@ -121,6 +132,7 @@ function createRewards({ db, config, stripe: injectedStripe, authRequired, admin
         throw conflict("Funding creation is still pending; Stripe should retry this event.");
       }
     }
+    let needsReconciliation = false;
     db.transaction(() => {
       if (db.prepare("SELECT 1 FROM cash_webhook_events WHERE id = ?").get(event.id)) return;
       if (confirmation) {
@@ -151,12 +163,27 @@ function createRewards({ db, config, stripe: injectedStripe, authRequired, admin
           db.prepare("UPDATE cash_funding SET status = 'blocked' WHERE id = ?").run(reward.funding_id);
           audit(null, "transfer_reversed", reward.id, { eventId: event.id, amountReversed: transfer.amount_reversed });
         } else if (transfer.metadata?.cash_reward_id) {
-          // A transfer response may have been lost before its ID was persisted.
-          throw conflict("Reconcile the original transfer before processing its reversal.");
+          const pending = db.prepare("SELECT * FROM cash_rewards WHERE id = ?").get(transfer.metadata.cash_reward_id);
+          if (!pending || pending.transfer_id || pending.status !== "processing") {
+            throw conflict("Reconcile the original transfer before processing its reversal.");
+          }
+          assertTransferMatchesReward(pending, transfer);
+          if (!(transfer.reversed || transfer.amount_reversed > 0)) {
+            throw conflict("Stripe transfer is not marked as reversed; manual reconciliation is required.");
+          }
+          db.prepare("UPDATE cash_funding SET status = 'blocked' WHERE id = ?").run(pending.funding_id);
+          audit(null, "funding_blocked", pending.funding_id, {
+            eventId: event.id, reason: "Transfer reversal is pending reconciliation.",
+            rewardId: pending.id, transferId: transfer.id
+          });
+          needsReconciliation = true;
         }
       }
-      db.prepare("INSERT INTO cash_webhook_events (id, type) VALUES (?, ?)").run(event.id, event.type);
+      if (!needsReconciliation) {
+        db.prepare("INSERT INTO cash_webhook_events (id, type) VALUES (?, ?)").run(event.id, event.type);
+      }
     }).immediate();
+    if (needsReconciliation) throw conflict("Reconcile the original transfer before processing its reversal.");
     return res.json({ received: true });
   }
 
@@ -345,17 +372,12 @@ function createRewards({ db, config, stripe: injectedStripe, authRequired, admin
     return reward;
   }
   function recordTransfer(reward, transfer, actor) {
-    if (transfer.livemode !== false || transfer.amount !== reward.amount_cents ||
-      transfer.currency !== "usd" || transfer.destination !== reward.destination ||
-      transfer.source_transaction !== fundingById(reward.funding_id).charge_id ||
-      transfer.transfer_group !== `cash_reward_${reward.id}`) {
-      throw conflict("Stripe transfer does not match the reserved reward; manual reconciliation is required.");
-    }
+    assertTransferMatchesReward(reward, transfer);
     db.transaction(() => {
       const current = rewardById(reward.id);
       if (current.transfer_id && current.transfer_id !== transfer.id) throw conflict("Conflicting transfer ID.");
-      if (!current.transfer_id) {
-        const reversed = transfer.reversed || transfer.amount_reversed > 0;
+      const reversed = transfer.reversed || transfer.amount_reversed > 0;
+      if (current.status !== "reversed" && (!current.transfer_id || reversed)) {
         db.prepare("UPDATE cash_rewards SET status = ?, transfer_id = ? WHERE id = ?")
           .run(reversed ? "reversed" : "transferred", transfer.id, reward.id);
         if (reversed) db.prepare("UPDATE cash_funding SET status = 'blocked' WHERE id = ?").run(reward.funding_id);

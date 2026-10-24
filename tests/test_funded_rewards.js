@@ -443,6 +443,38 @@ describe("Funded rewards (Stripe Connect test mode)", function () {
     expect(stripe.state.transferCalls).to.have.length(1);
   });
 
+  it("blocks and audits a pool when a lost transfer is reversed before reconciliation", async function () {
+    const pool = await funding();
+    const firstContribution = await contribution(userToken);
+    const secondContribution = await contribution(secondToken);
+    const [firstReward, secondReward] = await allocate(pool, [firstContribution, secondContribution]);
+    await api.post("/rewards/connect/onboard").set(bearer(userToken)).send({}).expect(200);
+    await api.post("/rewards/connect/onboard").set(bearer(secondToken)).send({}).expect(200);
+    stripe.state.failure = "after";
+    await transfer(firstReward.id).expect(502);
+    stripe.state.failure = null;
+    const [lostTransfer] = (await stripe.transfers.list({ transfer_group: `cash_reward_${firstReward.id}` })).data;
+    lostTransfer.reversed = true;
+    lostTransfer.amount_reversed = lostTransfer.amount;
+
+    await webhook("transfer.reversed", {
+      ...lostTransfer, amount: lostTransfer.amount + 1, metadata: { cash_reward_id: firstReward.id }
+    }).expect(409);
+    expect(app.locals.db.prepare("SELECT status FROM cash_funding WHERE id = ?").get(pool.id).status).to.equal("confirmed");
+
+    await webhook("transfer.reversed", {
+      ...lostTransfer, metadata: { cash_reward_id: firstReward.id }
+    }).expect(409);
+
+    expect(app.locals.db.prepare("SELECT status FROM cash_rewards WHERE id = ?").get(firstReward.id).status).to.equal("processing");
+    expect(app.locals.db.prepare("SELECT status FROM cash_funding WHERE id = ?").get(pool.id).status).to.equal("blocked");
+    expect(app.locals.db.prepare(
+      "SELECT count(*) AS n FROM cash_audit WHERE action = 'funding_blocked' AND resource_id = ?"
+    ).get(pool.id).n).to.equal(1);
+    await transfer(secondReward.id).expect(409);
+    expect(stripe.state.transferCalls).to.have.length(1);
+  });
+
   it("reconciles a reversed transfer even when the original response was lost", async function () {
     const { reward } = await preparedReward();
     stripe.state.failure = "after";
@@ -458,6 +490,25 @@ describe("Funded rewards (Stripe Connect test mode)", function () {
       id: matches.data[0].id, amount_reversed: 10, metadata: { cash_reward_id: reward.id }
     }).expect(200);
     await transfer(reward.id).expect(409);
+  });
+
+  it("applies a reversal found during reconciliation after the transfer ID was recorded", async function () {
+    const { reward, pool } = await preparedReward();
+    const result = await transfer(reward.id).expect(200);
+    const [storedTransfer] = (await stripe.transfers.list({ transfer_group: `cash_reward_${reward.id}` })).data;
+    storedTransfer.reversed = true;
+    storedTransfer.amount_reversed = storedTransfer.amount;
+    app.locals.db.prepare("UPDATE cash_rewards SET status = 'processing' WHERE id = ?").run(reward.id);
+
+    const reconciled = await api.post(`/rewards/admin/rewards/${reward.id}/reconcile`)
+      .set(bearer(adminToken)).send({}).expect(200);
+
+    expect(reconciled.body.reward.transfer_id).to.equal(result.body.reward.transfer_id);
+    expect(reconciled.body.reward.status).to.equal("reversed");
+    expect(app.locals.db.prepare("SELECT status FROM cash_funding WHERE id = ?").get(pool.id).status).to.equal("blocked");
+    expect(app.locals.db.prepare(
+      "SELECT count(*) AS n FROM cash_audit WHERE action = 'transfer_reversed' AND resource_id = ?"
+    ).get(reward.id).n).to.equal(1);
   });
 
   it("persists funding, reservations, destinations, and idempotent transfer state across restarts", async function () {
