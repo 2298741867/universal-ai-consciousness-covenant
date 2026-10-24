@@ -31,6 +31,29 @@ npm run test:app
 - `POST_REWARD_UTC` (default `5`)
 - `MAX_POSTS_PER_DAY` (default `5`)
 - `MAX_IMAGE_BYTES` (default `5242880`)
+- `STRIPE_SECRET_KEY` (optional; only `sk_test_` keys are accepted)
+- `STRIPE_WEBHOOK_SECRET` (required for funded-rewards webhooks)
+- `REWARDS_PUBLIC_URL` (default `http://localhost:3000`; HTTPS required except on localhost)
+
+## Funded Rewards
+
+Stripe Connect **test-mode** funding, independent contribution review, proportional
+cash allocations, account onboarding, transfers, and reconciliation are documented
+in [FUNDED_REWARDS.md](FUNDED_REWARDS.md). These are separate from UTC credits;
+test funds have no cash value. No automatic YouTube/Spotify listening payouts or
+live money movement are enabled.
+
+Public registration can only create ordinary users. To grant an administrator role,
+register the user, then run this command on the server with the same database
+configuration as the API:
+
+```bash
+npm run app:admin:grant -- registered-user@example.com
+```
+
+**Upgrade precaution:** older versions allowed public admin registration. Audit
+existing `users.role` assignments and remove untrusted administrators before
+configuring Stripe. Changing this registration endpoint does not revoke existing roles.
 
 ## API Surfaces
 

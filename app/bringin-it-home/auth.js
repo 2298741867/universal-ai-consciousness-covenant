@@ -52,7 +52,8 @@ function verifyJwt(token, secret) {
   const [header, payload, signature] = parts;
   const signingInput = `${header}.${payload}`;
   const expected = crypto.createHmac("sha256", secret).update(signingInput).digest("base64url");
-  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+  if (Buffer.byteLength(signature) !== Buffer.byteLength(expected) ||
+    !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
     return null;
   }
   let parsed;

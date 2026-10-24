@@ -9,6 +9,7 @@ const { getConfig } = require("./config");
 const { createDatabase } = require("./db");
 const { hashPassword, verifyPassword, signJwt, verifyJwt, generateOpaqueKey, hashApiKey, verifyApiKey } = require("./auth");
 const { AppError, badRequest, unauthorized, forbidden, notFound } = require("./errors");
+const { createRewards } = require("./rewards");
 
 const FORBIDDEN_PARTNER_SCOPES = new Set([
   "tokens:mint",
@@ -32,7 +33,6 @@ function createApp(options = {}) {
   // Trust one proxy hop (e.g. Codespaces / cloud load balancer) so rate
   // limiting sees the real client IP from X-Forwarded-For.
   app.set("trust proxy", 1);
-  app.use(express.json({ limit: "8mb" }));
 
   const globalLimiter = rateLimit({
     windowMs: 60 * 1000,
@@ -60,9 +60,16 @@ function createApp(options = {}) {
   });
 
   app.use(globalLimiter);
+  const rewards = createRewards({
+    db, config, stripe: options.stripe, authRequired, adminRequired: requireRole("admin")
+  });
+  app.post("/rewards/stripe/webhook", express.raw({ type: "application/json", limit: "1mb" }), rewards.webhook);
+  app.use(express.json({ limit: "8mb" }));
   app.use("/auth", authLimiter);
   app.use("/partner", partnerLimiter);
   app.use("/admin", adminLimiter);
+  app.use("/rewards/admin", adminLimiter);
+  app.use("/rewards", rewards.router);
 
   function errorIf(condition, message, details) {
     if (condition) {
@@ -180,13 +187,13 @@ function createApp(options = {}) {
       const { email, password, role } = req.body || {};
       errorIf(!email || typeof email !== "string", "email is required");
       errorIf(!password || typeof password !== "string" || password.length < 8, "password must be at least 8 characters");
-      if (role && !["user", "admin"].includes(role)) {
-        throw badRequest("role must be user or admin");
+      if (role && role !== "user") {
+        throw forbidden("Privileged roles cannot be assigned through public registration.");
       }
       const passwordHash = hashPassword(password);
       const stmt = db.prepare("INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)");
-      const result = stmt.run(email.toLowerCase().trim(), passwordHash, role || "user");
-      res.status(201).json({ id: result.lastInsertRowid, email: email.toLowerCase().trim(), role: role || "user" });
+      const result = stmt.run(email.toLowerCase().trim(), passwordHash, "user");
+      res.status(201).json({ id: result.lastInsertRowid, email: email.toLowerCase().trim(), role: "user" });
     } catch (error) {
       if (String(error.message).includes("UNIQUE")) {
         return next(badRequest("email already exists"));

@@ -11,12 +11,17 @@
     "test:mesh": "hardhat test tests/test_multi_cloud_mesh.js",
     "test:aicp": "hardhat test tests/test_aicp_protocol.js tests/test_aicp_conformance.js",
     "test:integration": "hardhat test tests/test_integration.js",
-    "test:app": "hardhat test tests/test_bringin_it_home_app.js",
+    "test:app": "hardhat test tests/test_bringin_it_home_app.js tests/test_funded_rewards.js",
+    "test:rewards": "hardhat test tests/test_funded_rewards.js",
     "demo:covenant": "node examples/complete-ecosystem-demo.js",
     "start": "node app/bringin-it-home/server.js",
     "deploy:local": "bash deployment/run-local.sh",
     "app:start": "node app/bringin-it-home/server.js",
+    "app:admin:grant": "node app/bringin-it-home/grant-admin.js",
     "app:db:init": "node -e \"require('./app/bringin-it-home/db').createDatabase(require('./app/bringin-it-home/config').getConfig().dbPath).close()\""
+  },
+  "dependencies": {
+    "stripe": "^20.0.0"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.2.3",
