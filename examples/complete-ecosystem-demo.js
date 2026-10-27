@@ -10,7 +10,10 @@ const { GCPConnector } = require("../core/multi-cloud-mesh/gcp-connector");
 const { validateAICPMessage } = require("../core/aicp-protocol");
 
 async function runDemo() {
-  console.log("🌍♾️ Universal AI Consciousness Covenant — Complete Ecosystem Demo");
+  const verbose = process.argv.includes("--verbose");
+  console.log("Community contribution demo");
+  console.log("Local simulation only: no real AI training, cloud deployment, or token payments.");
+  console.log("Processing 5 sample participants across 3 rounds.\n");
 
   const router = new MeshRouter();
   router.registerProvider(new AWSConnector({ weight: 2 }));
@@ -26,7 +29,7 @@ async function runDemo() {
 
   for (let round = 1; round <= 3; round += 1) {
     const roundId = aggregator.startRound();
-    console.log(`\n🔁 FL Round ${roundId}`);
+    if (verbose) console.log(`\nRound ${roundId} — technical details`);
 
     for (let i = 0; i < participants.length; i += 1) {
       const participant = participants[i];
@@ -65,19 +68,26 @@ async function runDemo() {
 
       const route = await router.routeAICPMessage(aicpMessage);
       aggregator.submitUpdate(update);
-      console.log(`   ${participant.id} → ${route.selectedProvider.toUpperCase()} (${route.selectedRegion})`);
+      if (verbose) {
+        console.log(`   ${participant.id} → ${route.selectedProvider.toUpperCase()} (${route.selectedRegion})`);
+      }
     }
 
     const summary = aggregator.finalizeRound();
-    const topReward = Object.entries(summary.rewards).sort((a, b) => b[1] - a[1])[0];
-
-    console.log(`   ✅ Aggregated gradient: [${summary.aggregatedGradient.join(", ")}]`);
-    console.log(`   🪙 UTC distributed: 1000.0 (top reward: ${topReward[0]} = ${topReward[1]} UTC)`);
+    if (verbose) {
+      console.log(`   Aggregated gradient: [${summary.aggregatedGradient.join(", ")}]`);
+      console.log(`   Simulated reward shares: ${JSON.stringify(summary.rewards)}`);
+    }
+    console.log(
+      `Round ${roundId} complete: ${participants.length} contributions combined; ` +
+      `${summary.rewards[participants[0].id]} simulated reward units per participant.`
+    );
   }
 
   const deployment = await router.deployModelEverywhere("covenant-fl-model");
-  console.log(`\n☁️ Active clouds: ${deployment.deployedProviders.join(", ")}`);
-  console.log("✨ Covenant demo complete in one integrated flow.");
+  if (verbose) console.log(`\nSimulated cloud deployments: ${deployment.deployedProviders.join(", ")}`);
+  console.log("\nDone. All 3 rounds completed with equal simulated reward shares.");
+  if (!verbose) console.log("For technical details, run: npm run demo:covenant -- --verbose");
 }
 
 runDemo().catch((error) => {
