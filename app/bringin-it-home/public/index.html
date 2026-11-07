@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bringin' It Home — UTC Web App</title>
+<style>
+  :root {
+    --bg: #0b0f1a;
+    --panel: #141b2d;
+    --panel2: #1b2440;
+    --accent: #7c5cff;
+    --accent2: #00d4a6;
+    --text: #e8ecf8;
+    --muted: #8b94b0;
+    --danger: #ff5c7a;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: radial-gradient(1200px 600px at 80% -10%, #22305e 0%, var(--bg) 55%);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px; border-bottom: 1px solid #232c4a;
+    background: rgba(11,15,26,.7); backdrop-filter: blur(6px);
+    position: sticky; top: 0; z-index: 5;
+  }
+  .brand { font-weight: 700; letter-spacing: .5px; }
+  .brand span { color: var(--accent); }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+  .card {
+    background: var(--panel); border: 1px solid #232c4a; border-radius: var(--radius);
+    padding: 20px; margin-bottom: 20px;
+  }
+  .hidden { display: none !important; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 17px; margin: 0 0 12px; }
+  p.muted, .muted { color: var(--muted); font-size: 13px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  input, textarea, select {
+    width: 100%; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid #2c3658; background: var(--panel2); color: var(--text);
+    font-size: 14px; outline: none;
+  }
+  input:focus, textarea:focus { border-color: var(--accent); }
+  button {
+    padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer;
+    background: var(--accent); color: #fff; font-weight: 600; font-size: 14px;
+    transition: filter .15s ease;
+  }
+  button:hover { filter: brightness(1.15); }
+  button.ghost { background: transparent; border: 1px solid #2c3658; color: var(--text); }
+  button.teal { background: var(--accent2); color: #052018; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+  .row > * { flex: 1; min-width: 140px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tabs button { background: var(--panel2); color: var(--muted); border: 1px solid #2c3658; }
+  .tabs button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .balance {
+    font-size: 34px; font-weight: 800; color: var(--accent2);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid #232c4a; }
+  th { color: var(--muted); font-weight: 600; }
+  .msg { margin-top: 10px; font-size: 13px; padding: 10px 12px; border-radius: 8px; }
+  .msg.ok { background: rgba(0,212,166,.12); color: var(--accent2); }
+  .msg.err { background: rgba(255,92,122,.12); color: var(--danger); }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; background: var(--panel2); border: 1px solid #2c3658; color: var(--muted); }
+  .auth-wrap { max-width: 420px; margin: 8vh auto 0; }
+  .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; word-break: break-all; }
+  img.preview { max-width: 180px; border-radius: 8px; margin-top: 10px; display: block; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Bringin' It <span>Home</span> — UTC Covenant</div>
+  <div id="userChip" class="hidden">
+    <span class="pill" id="userEmail"></span>
+    <button class="ghost" id="logoutBtn" style="margin-left:8px">Log out</button>
+  </div>
+</header>
+
+<main>
+  <!-- AUTH -->
+  <section id="authSection" class="auth-wrap">
+    <div class="card">
+      <h1>Welcome</h1>
+      <p class="muted">Log in or create an account to explore the UTC token ecosystem.</p>
+      <div class="tabs" style="margin-top:14px">
+        <button id="tabLogin" class="active">Log in</button>
+        <button id="tabRegister">Register</button>
+      </div>
+      <label for="email">Email</label>
+      <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
+      <label for="password">Password <span class="muted">(min 8 chars)</span></label>
+      <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+      <div style="margin-top:16px">
+        <button id="authSubmit" style="width:100%">Log in</button>
+      </div>
+      <div id="authMsg"></div>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dashSection" class="hidden">
+    <div class="card">
+      <div class="row" style="align-items:center">
+        <div>
+          <p class="muted" style="margin:0">UTC Balance</p>
+          <div class="balance" id="balance">0</div>
+        </div>
+        <div style="text-align:right">
+          <button class="ghost" id="refreshBtn">↻ Refresh</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button data-tab="wallet" class="active">Wallet Ledger</button>
+      <button data-tab="tracks">Tracks & Listen-to-Earn</button>
+      <button data-tab="posts">Posts</button>
+    </div>
+
+    <!-- WALLET -->
+    <div class="card" id="tab-wallet">
+      <h2>Token Ledger</h2>
+      <p class="muted">Every UTC reward you've earned, newest first.</p>
+      <table>
+        <thead><tr><th>ID</th><th>Amount</th><th>Reason</th><th>Source</th><th>When</th></tr></thead>
+        <tbody id="ledgerBody"><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- TRACKS -->
+    <div class="card hidden" id="tab-tracks">
+      <h2>Create a Track</h2>
+      <div class="row">
+        <div><label>Title</label><input id="trackTitle" placeholder="My song" /></div>
+        <div><label>Artist name</label><input id="trackArtist" placeholder="(defaults to your email)" /></div>
+        <div style="flex:0 0 auto"><button id="createTrackBtn">Create</button></div>
+      </div>
+      <div id="trackMsg"></div>
+
+      <hr style="border-color:#232c4a; margin:20px 0" />
+
+      <h2>Listen-to-Earn Simulator</h2>
+      <p class="muted">Rewards need ≥30s elapsed and ≥3 heartbeats, and you can't earn on your own track.</p>
+      <div class="row">
+        <div><label>Track ID</label><input id="listenTrackId" type="number" min="1" placeholder="1" /></div>
+        <div style="flex:0 0 auto"><button class="teal" id="listenStartBtn">▶ Start</button></div>
+        <div style="flex:0 0 auto"><button class="ghost" id="heartbeatBtn" disabled>♥ Heartbeat (<span id="hbCount">0</span>)</button></div>
+        <div style="flex:0 0 auto"><button id="listenEndBtn" disabled>■ End & Claim</button></div>
+      </div>
+      <div id="listenMsg"></div>
+    </div>
+
+    <!-- POSTS -->
+    <div class="card hidden" id="tab-posts">
+      <h2>Create a Post</h2>
+      <p class="muted">Images are stripped of metadata (EXIF) and duplicates are rejected. Earns UTC.</p>
+      <label>Caption</label>
+      <input id="postCaption" placeholder="Hello world" />
+      <label>Image (jpeg / png / webp, ≤5MB)</label>
+      <input id="postImage" type="file" accept="image/jpeg,image/png,image/webp" />
+      <img id="postPreview" class="preview hidden" alt="preview" />
+      <div style="margin-top:14px"><button id="createPostBtn">Publish Post</button></div>
+      <div id="postMsg"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+let token = localStorage.getItem("bih_token") || null;
+let mode = "login";
+let listenSessionId = null;
+let heartbeatCount = 0;
+
+function showMsg(el, text, ok) {
+  el.className = "msg " + (ok ? "ok" : "err");
+  el.textContent = text;
+}
+
+async function api(path, options = {}) {
+  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+  if (token) headers.Authorization = "Bearer " + token;
+  const res = await fetch(path, { ...options, headers });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (res.status === 401 && token) { logout(); }
+    throw new Error(body.message || ("Request failed: " + res.status));
+  }
+  return body;
+}
+
+function setAuthUI(loggedIn) {
+  $("authSection").classList.toggle("hidden", loggedIn);
+  $("dashSection").classList.toggle("hidden", !loggedIn);
+  $("userChip").classList.toggle("hidden", !loggedIn);
+}
+
+function logout() {
+  token = null;
+  localStorage.removeItem("bih_token");
+  setAuthUI(false);
+}
+
+function setMode(next) {
+  mode = next;
+  $("tabLogin").classList.toggle("active", mode === "login");
+  $("tabRegister").classList.toggle("active", mode === "register");
+  $("authSubmit").textContent = mode === "login" ? "Log in" : "Create account";
+}
+
+$("tabLogin").onclick = () => setMode("login");
+$("tabRegister").onclick = () => setMode("register");
+$("logoutBtn").onclick = logout;
+
+$("authSubmit").onclick = async () => {
+  const email = $("email").value.trim();
+  const password = $("password").value;
+  const msg = $("authMsg");
+  msg.textContent = "";
+  try {
+    if (mode === "register") {
+      await api("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) });
+    }
+    const data = await api("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+    token = data.token;
+    localStorage.setItem("bih_token", token);
+    $("userEmail").textContent = data.user.email + " · " + data.user.role;
+    setAuthUI(true);
+    await refreshDashboard();
+  } catch (err) {
+    showMsg(msg, err.message, false);
+  }
+};
+
+async function refreshDashboard() {
+  const bal = await api("/me/balance");
+  $("balance").textContent = bal.balance + " UTC";
+  const ledger = await api("/me/ledger?pageSize=25");
+  const body = $("ledgerBody");
+  if (!ledger.entries.length) {
+    body.innerHTML = '<tr><td colspan="5" class="muted">No rewards yet — create a post or listen to a track.</td></tr>';
+  } else {
+    body.innerHTML = ledger.entries.map((e) =>
+      `<tr><td>${e.id}</td><td style="color:var(--accent2)">+${e.amount}</td><td>${e.reason}</td><td>${e.sourceType} #${e.sourceId}</td><td class="muted">${e.createdAt}</td></tr>`
+    ).join("");
+  }
+}
+$("refreshBtn").onclick = () => refreshDashboard().catch(() => {});
+
+// Tabs
+document.querySelectorAll(".tabs [data-tab]").forEach((btn) => {
+  btn.onclick = () => {
+    document.querySelectorAll(".tabs [data-tab]").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    ["wallet", "tracks", "posts"].forEach((t) =>
+      $("tab-" + t).classList.toggle("hidden", t !== btn.dataset.tab));
+  };
+});
+
+// Tracks
+$("createTrackBtn").onclick = async () => {
+  const msg = $("trackMsg");
+  try {
+    const track = await api("/tracks", {
+      method: "POST",
+      body: JSON.stringify({ title: $("trackTitle").value, artistName: $("trackArtist").value || undefined })
+    });
+    showMsg(msg, `Track created — ID ${track.id} (“${track.title}” by ${track.artistName})`, true);
+    $("listenTrackId").value = track.id;
+  } catch (err) { showMsg(msg, err.message, false); }
+};
+
+$("listenStartBtn").onclick = async () => {
+  const msg = $("listenMsg");
+  try {
+    const trackId = Number($("listenTrackId").value);
+    const data = await api(`/tracks/${trackId}/listen/start`, { method: "POST", body: "{}" });
+    listenSessionId = data.listenSessionId;
+    heartbeatCount = 0;
+    $("hbCount").textContent = "0";
+    $("heartbeatBtn").disabled = false;
+    $("listenEndBtn").disabled = false;
+    showMsg(msg, `Listening session #${listenSessionId} started. Send ≥3 heartbeats, wait ≥30s total, then End & Claim.`, true);
+  } catch (err) { showMsg(msg, err.message, false); }
+};
+
+$("heartbeatBtn").onclick = async () => {
+  const msg = $("listenMsg");
+  try {
+    const trackId = Number($("listenTrackId").value);
+    await api(`/tracks/${trackId}/listen/heartbeat`, {
+      method: "POST", body: JSON.stringify({ listenSessionId })
+    });
+    heartbeatCount += 1;
+    $("hbCount").textContent = String(heartbeatCount);
+    showMsg(msg, `Heartbeat ${heartbeatCount} recorded.`, true);
+  } catch (err) { showMsg(msg, err.message, false); }
+};
+
+$("listenEndBtn").onclick = async () => {
+  const msg = $("listenMsg");
+  try {
+    const trackId = Number($("listenTrackId").value);
+    const data = await api(`/tracks/${trackId}/listen/end`, {
+      method: "POST",
+      body: JSON.stringify({ listenSessionId, idempotencyKey: crypto.randomUUID() })
+    });
+    $("heartbeatBtn").disabled = true;
+    $("listenEndBtn").disabled = true;
+    if (data.rewarded) {
+      showMsg(msg, `Rewarded! +UTC for listening (${data.elapsedSeconds}s, ${data.heartbeatCount} heartbeats). Check your wallet.`, true);
+      refreshDashboard().catch(() => {});
+    } else {
+      showMsg(msg, `Session ended but not eligible: ${data.elapsedSeconds}s elapsed (need ≥30), ${data.heartbeatCount} heartbeats (need ≥3), or already rewarded today / own track.`, false);
+    }
+  } catch (err) { showMsg(msg, err.message, false); }
+};
+
+// Posts
+$("postImage").onchange = () => {
+  const file = $("postImage").files[0];
+  if (!file) { $("postPreview").classList.add("hidden"); return; }
+  const reader = new FileReader();
+  reader.onload = () => { $("postPreview").src = reader.result; $("postPreview").classList.remove("hidden"); };
+  reader.readAsDataURL(file);
+};
+
+$("createPostBtn").onclick = async () => {
+  const msg = $("postMsg");
+  const file = $("postImage").files[0];
+  if (!file) { showMsg(msg, "Choose an image first.", false); return; }
+  try {
+    const dataUrl = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+    const imageBase64 = String(dataUrl).split(",")[1];
+    const post = await api("/posts", {
+      method: "POST",
+      body: JSON.stringify({
+        caption: $("postCaption").value,
+        imageBase64,
+        mimeType: file.type,
+        idempotencyKey: crypto.randomUUID()
+      })
+    });
+    showMsg(msg, `Post #${post.id} published — metadata stripped, +${5} UTC earned. Hash: ${post.imageHash.slice(0, 16)}…`, true);
+    refreshDashboard().catch(() => {});
+  } catch (err) { showMsg(msg, err.message, false); }
+};
+
+// Restore session
+if (token) {
+  api("/me/balance")
+    .then(async (bal) => {
+      setAuthUI(true);
+      $("userEmail").textContent = "user #" + bal.userId;
+      $("balance").textContent = bal.balance + " UTC";
+      await refreshDashboard();
+    })
+    .catch(() => logout());
+}
+</script>
+</body>
+</html>

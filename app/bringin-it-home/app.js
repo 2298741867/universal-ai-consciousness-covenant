@@ -1,6 +1,7 @@
 "use strict";
 
 const crypto = require("crypto");
+const path = require("path");
 const express = require("express");
 const { rateLimit } = require("express-rate-limit");
 const sharp = require("sharp");
@@ -33,6 +34,7 @@ function createApp(options = {}) {
   // limiting sees the real client IP from X-Forwarded-For.
   app.set("trust proxy", 1);
   app.use(express.json({ limit: "8mb" }));
+  app.use(express.static(path.join(__dirname, "public")));
 
   const globalLimiter = rateLimit({
     windowMs: 60 * 1000,
